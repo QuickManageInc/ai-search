@@ -34,9 +34,9 @@ EKS cluster (cloud-managed, existing)
 │
 └── Shared infrastructure
     ├── MongoDB
-    ├── Redis            (cache + rate limiting)
-    ├── SQS              (async job queue)
-    ├── ai API
+    ├── Redis                (cache + rate limiting)
+    ├── SQS                  (async job queue)
+    ├── OpenAI API           (GPT-4o-mini via Vercel AI SDK)
     └── Instagram Graph API
 ```
 
@@ -68,7 +68,7 @@ ai-edge-api
 Prompt builder (inject JSON context + merchant question)
     │
     ▼
-ai API  →  stream response  →  SSE back to portal
+OpenAI GPT-4o-mini (Vercel AI SDK)  →  stream response  →  SSE back to portal
     │
 Redis cache (keyed by storeId + question_hash + dateRange, TTL 1h)
 ```
@@ -121,7 +121,7 @@ ai-worker
     ├── pulls last 90 days of daily_store_summary from analyticsDB
     ├── computes day-of-week averages, week-over-week trend, standard deviation
     ├── enriches with upcoming public holidays for merchant region
-    ├── calls ai API → generates forecast with confidence range
+    ├── calls OpenAI GPT-4o-mini (Vercel AI SDK) → generates forecast with confidence range
     └── stores result in MongoDB forecast_cache (TTL 24h)
 ```
 
@@ -200,7 +200,7 @@ social-publisher-api
     ├──► menus-edge-api  →  name, price, description, images
     │
     ▼
-ai API  →  generate Instagram caption draft
+OpenAI GPT-4o-mini (Vercel AI SDK)  →  generate Instagram caption draft
     │
     ▼
 Preview window (merchant edits + approves)
@@ -268,32 +268,37 @@ Response:
 
 ## Shared: LLMClient wrapper
 
-All three modules share a single internal `LLMClient` class. Build it once, use it everywhere.
+Each AI service owns its own `LLMClient` — there is no shared monorepo package. The interface is identical across all three services so behaviour is consistent and the implementation can be copied as a starting point.
 
 ```typescript
-// packages/ai-core/src/LLMClient.ts
+// ai-edge-api/src/llm/LLMClient.ts
+// ai-worker/src/llm/LLMClient.ts
+// social-publisher-api/src/llm/LLMClient.ts
 
-interface LLMCallOptions {
-  feature: 'analytics_assistant' | 'revenue_forecast' | 'social_draft';
-  tenantId: string;
-  storeId: string;
-  systemPrompt: string;
-  userPrompt: string;
-  maxTokens?: number;       // default: 1024
-  stream?: boolean;         // default: false
+import { createOpenAI }            from '@ai-sdk/openai'
+import { streamText, generateText } from 'ai'
+
+type Message = { role: 'system' | 'user' | 'assistant'; content: string }
+
+interface StreamOptions {
+  feature:    'analytics_assistant' | 'revenue_forecast' | 'social_draft'
+  messages:   Message[]
+  storeId:    string
+  maxTokens?: number    // default: AI_MAX_TOKENS env var (1024)
 }
 
-class LLMClient {
-  async call(options: LLMCallOptions): Promise<string>
-  async stream(options: LLMCallOptions): AsyncIterable<string>
-}
+interface CallOptions extends StreamOptions {}
+
+// call()   → returns full text string (non-streaming: forecast, social draft, compression)
+// stream() → returns AsyncIterable<string> of deltas (streaming: analytics assistant SSE)
 ```
 
 Responsibilities:
-- Wraps ai SDK with automatic retries (3x, exponential backoff)
+- Wraps Vercel AI SDK (`ai` + `@ai-sdk/openai`) — provider swap is one import change
+- Model is read from `AI_MODEL` env var (default: `gpt-4o-mini`) — no code change to switch model
+- `temperature` read from `AI_TEMPERATURE` env var (default: `0.3`)
 - Enforces `max_tokens` ceiling per call
-- Logs token usage per `(tenantId, storeId, feature)` to MongoDB `ai_usage_log` — cost tracking per merchant
-- Applies `cache_control` header for repeated system prompt blocks (saves ~80% on tokens for analytics assistant)
+- Logs token usage per `(storeId, feature)` to MongoDB `ai_usage_log` — cost tracking per merchant
 - Single place to swap model versions or providers in the future
 
 ---
@@ -302,15 +307,16 @@ Responsibilities:
 
 | Concern | Technology | Notes |
 |---|---|---|
-| API framework | Fastify (TypeScript) | Lighter than Express, native async streaming for SSE |
-| LLM provider | ai API (`claude-sonnet-4-6`) | Via shared `LLMClient` wrapper |
+| API framework | `node:http` (TypeScript) | Raw HTTP server — consistent with `inventory-edge-api` and `analytics-edge-api`; no Fastify |
+| LLM provider | OpenAI GPT-4o-mini | $0.15/1M input tokens — cheapest major model with solid structured-data Q&A quality |
+| AI SDK | Vercel AI SDK (`ai` + `@ai-sdk/openai`) | Provider-agnostic; one-line swap to Gemini or Anthropic; built-in SSE streaming and token counting |
 | Async jobs | SQS + EventBridge cron | Already in stack, no new infra |
-| Caching | Redis via `ioredis` | Already in stack |
+| Caching | Redis via `ioredis` | Already running in production |
 | Primary database | MongoDB | `forecast_cache`, `posts_audit_log`, `ai_usage_log` |
 | Instagram integration | Meta Graph API v18+ | Content Publishing API, OAuth per merchant |
-| Streaming | Server-Sent Events (SSE) | Native in Fastify, no WebSocket needed |
+| Streaming | Server-Sent Events (SSE) | Written directly to `node:http` `ServerResponse` — no WebSocket needed |
 | Deployment | EKS (existing cluster) | New Deployments + Services per module |
-| Secret management | AWS Secrets Manager | Encrypted Instagram OAuth tokens |
+| Secret management | AWS Secrets Manager | OpenAI API key + encrypted Instagram OAuth tokens |
 
 ---
 
@@ -321,10 +327,11 @@ The sequence matters — each step unblocks the next.
 **Step 1 — Foundation (week 1–2)**
 
 Stand up the `ai-edge-api` skeleton on EKS:
-- Auth middleware reused from existing services
-- Redis connection + cache utility
-- `LLMClient` wrapper with usage logging
-- Health check endpoint
+- Copy `logger.ts`, `telemetry.ts`, `secrets.ts`, `cors.ts` from `inventory-edge-api` (change service name only)
+- Wire `index.ts` boot sequence: secrets → telemetry → Redis → MongoDB → `node:http` server
+- Redis client singleton (`ioredis`) + response cache utility
+- `LLMClient` wrapper (Vercel AI SDK, GPT-4o-mini) with usage logging to MongoDB
+- `/healthz`, `/health/ready`, `/metrics` endpoints
 
 **Step 2 — Analytics Assistant (week 2–4)**
 
@@ -338,7 +345,7 @@ Stand up the `ai-edge-api` skeleton on EKS:
 
 - Build the SQS consumer in `ai-worker`
 - Set up EventBridge nightly cron rule
-- Implement nightly stats computation + ai call per store
+- Implement nightly stats computation + OpenAI call per store
 - Write results to `forecast_cache` collection
 - Run for 2+ weeks before building the UI — lets you validate accuracy first
 
@@ -372,4 +379,4 @@ Given the priority on minimal infra spend:
 
 ---
 
-*Document prepared for internal architecture review. Stack: Node.js / TypeScript, EKS, MongoDB, Redis, SQS, ai API.*
+*Document prepared for internal architecture review. Stack: Node.js / TypeScript, `node:http`, EKS, MongoDB, Redis, SQS, OpenAI GPT-4o-mini via Vercel AI SDK.*
