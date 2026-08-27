@@ -145,71 +145,67 @@ From `dailyStoreEmployeePerformance` + edge:
 
 Do it in this order:
 
-### Tier 1 — no new `analytics-service` work (wire what’s live)
+### Tier 1 — no new `analytics-service` work (wire what’s live) — ✅ Done
 
-Add AI tools (or one composition) for:
+Added atomic AI tools: `get_scheduling_summary`, `get_time_off_summary`, `get_compliance_status`, `get_attendance_trend`, `get_swaps_summary` (with slim mappers + prompt rules). Composite `get_staff_ops_health` shipped later as P3.
 
-1. `get_scheduling_summary` → scheduled hours + open shifts  
-2. `get_time_off_summary`  
-3. `get_compliance_expiring` (permits/docs — high “For You” value)  
-4. Optional: `get_attendance_trend`, `get_swaps_summary`
+### Tier 2 — small aggregator / edge upgrades (worth doing) — ✅ Done
 
-Plus one composite (same pattern as `get_menu_health`):
+| Change | Where | Why | Status |
+|---|---|---|---|
+| `discountUsed` (0/1) like tips | `billingTotals` → `daily_store_summary`/`daily_platform_summary` (+ `billingAdjustment`, + backfill) | Fixes fake discount rate; unlocks honest payment answers | ✅ Real `discountCount`/`discountRate`/`averageDiscount` now flow through `billing.repository.ts` → `billing.service.ts` → `slimPaymentAnalytics`. **Requires running the backfill script** to correct historical `daily_store_summary`/`daily_platform_summary` docs — new events compute it correctly going forward regardless. |
+| Bottom-N staff in performance response | edge and/or slim | Same data, better questions (“who underperformed”) | ✅ No edge change needed — `orders/employee-performance` already returns all employees; `slimEmployeePerformance` now returns both `topStaff` and `bottomStaff` (bottom 5, only when there's a distinct tail beyond top 10) |
+| Per-employee tip $ | performance aggregator + billing join | High merchant value; slightly more work | ✅ `billingAdjustment.ts` now attributes tip deltas to `daily_store_employee_performance` by the order's `employeeId`; edge + slim expose `tipsUsd`/`avgTipUsd`/`tipCount` per employee. Backfill updated with the same billing join. |
 
-- **`get_staff_ops_health`** → new `GET analytics/ai/staff-ops` composing scheduling + attendance + time-off + top/bottom performers  
+### Tier 3 — deferred / undone (not building now)
 
-### Tier 2 — small aggregator / edge upgrades (worth doing)
+> **Status: intentionally not started.** Revisit only if product explicitly asks.
 
-| Change | Where | Why |
+| Candidate | Why deferred | What it would need |
 |---|---|---|
-| `discountUsed` (0/1) like tips | `billingTotals` → `daily_store_summary` | Fixes fake discount rate; unlocks honest payment answers |
-| Bottom-N staff in performance response | edge and/or slim | Same data, better questions (“who underperformed”) |
-| Per-employee tip $ | performance aggregator + billing join | High merchant value; slightly more work |
+| Labor cost / sales-per-labor-hour | No wage data in analytics; punches are counts not hours worked | Payroll/`hourlyRate` source and/or punch→duration pairing; new daily labor fields |
+| Late / no-show vs published shifts | Hard join + product rules (thresholds, overnight, open shifts) | New `daily_store_shift_adherence` (or similar) + privacy policy for named individuals |
+| Item × employee affinity | Useful but lower ROI than voids/platform help | New `daily_store_employee_items` rollup + capped edge/AI tool |
 
-### Tier 3 — only if product asks
-
-- Labor cost / sales-per-labor-hour (needs wage or hours worked, not just punches)  
-- Late / no-show vs published shifts  
-- Item × employee affinity  
-
-Do not start Tier 3 before Tier 1 is in the copilot.
+Do **not** start Tier 3 until product asks. Finish board (P1/P3/P6) is done without it.
 
 ---
 
 ## 7. Suggested Copilot tool surface by section (after this round)
 
-| Section | Keep | Add soon | Honest-no / don’t promise |
+| Section | Keep | Status | Honest-no / don’t promise |
 |---|---|---|---|
-| **Menu** | All current | — | — |
-| **Revenue / orders** | All current | `get_void_summary` | — |
-| **Payments** | overview + details | Fix discount via A4 + later `discountUsed` | Discount **rate/avg** until Tier 2 |
-| **Staff sales** | `get_staff_performance` | Bottom performers + optional tips | — |
-| **Staff ops (HR/labor)** | workforce + attendance | scheduling, time-off, compliance (+ composite) | — |
-| **Guests** | reservations | — | Repeat guests |
-| **Platform** | — | capabilities / howto | — |
-| **Inventory** | — | — | Deferred to CDC |
+| **Menu** | All current | ✅ | — |
+| **Revenue / orders** | All current + `get_void_summary` | ✅ | — |
+| **Payments** | overview + details (real discount rate/avg after Tier 2 + backfill) | ✅ | — |
+| **Staff sales** | `get_staff_performance` (top + bottom + tips) | ✅ | — |
+| **Staff ops (HR/labor)** | workforce + attendance + scheduling/time-off/compliance + `get_staff_ops_health` | ✅ | Labor cost %, late/no-show (Tier 3) |
+| **Guests** | reservations | ✅ | Repeat guests |
+| **Platform** | `get_platform_capabilities`, `get_feature_howto` | ✅ | — |
+| **Inventory** | — | Deferred to CDC | All inventory Q&A |
 
-Rough tool count if voids + ~4 staff tools + 1 staff composite + 2 platform ≈ **30–31** — still under the ~40–50 ceiling before tool-retrieval / semantic-layer refactor.
+Rough tool count ≈ **30–32** — still under the ~40–50 ceiling before tool-retrieval / semantic-layer refactor.
 
 ---
 
 ## 8. Ranked build order (metrics + tools, no inventory)
 
-| Priority | Work | New aggregator? |
-|---|---|---|
-| **P0** | A4 honest-no on fake discount rate/avg in slim + prompt | No (fix lie first) |
-| **P1** | `get_void_summary` + `ai/void-summary` (+ daily void field in edge query) | No |
-| **P2** | Wire staff Tier 1 tools + slim mappers from existing `employees/*` | No |
-| **P3** | `ai/staff-ops` composition endpoint + `get_staff_ops_health` | No (compose reads) |
-| **P4** | `discountUsed` in `analytics-service` + backfill | **Yes** |
-| **P5** | Bottom performers + optional employee tips | Edge only / optional aggregator |
-| **P6** | Platform-help tools (static catalog) | No |
-| Later | Neighborhood, inventory via CDC | Separate programs |
+| Priority | Work | New aggregator? | Status |
+|---|---|---|---|
+| **P0** | ~~A4 honest-no on fake discount rate/avg~~ — superseded by P4 | No | ✅ superseded |
+| **P1** | `get_void_summary` + `ai/void-summary` (+ daily void field in edge query) | No | ✅ Done |
+| **P2** | Wire staff Tier 1 tools + slim mappers from existing `employees/*` | No | ✅ Done |
+| **P3** | `ai/staff-ops` composition endpoint + `get_staff_ops_health` | No (compose reads) | ✅ Done |
+| **P4** | `discountUsed` in `analytics-service` + backfill | **Yes** | ✅ Done |
+| **P5** | Bottom performers + employee tips | Edge only / aggregator | ✅ Done |
+| **P6** | Platform-help tools (static catalog) | No | ✅ Done |
+| Later | Neighborhood, inventory via CDC | Separate programs | Open |
+| **Tier 3** | Labor cost / SPLH, late/no-show, item×employee | Yes | **Deferred / undone** |
 
 ---
 
 ## 9. Open questions before coding staff Tier 1
 
-1. One composite `get_staff_ops_health` vs several atomic staff tools first? (Composite reduces wrong-tool risk for vague “how’s labor?” questions.)  
-2. Should compliance/expiring be a chat tool **and** a “For You” card source (Phase B)?  
-3. Confirm historical coverage of `billing.void` on older `daily_store_summary` rows before promising daily void trends without a caveat.
+1. One composite `get_staff_ops_health` vs several atomic staff tools first? (Composite reduces wrong-tool risk for vague “how’s labor?” questions.)    => started with several atomic staff tools first; composite shipped as P3
+2. Should compliance/expiring be a chat tool **and** a “For You” card source (Phase B)?   
+3. Confirm historical coverage of `billing.void` on older `daily_store_summary` rows before promising daily void trends without a caveat. ok — void tool includes a note that older days may show 0
