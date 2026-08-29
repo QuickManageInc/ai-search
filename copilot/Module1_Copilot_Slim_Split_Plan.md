@@ -48,7 +48,7 @@ edge fetch (fat, OK)  →  request cache (once)  →  projector per tool (thin) 
 1. ✅ Request fetch memo  
 2. ✅ Full-range days in slim DTOs (drop last-7 trap)  
 3. ✅ Observability in `ai_usage_log` + structured logs (see `Module1_Copilot_Tool_Test_Questions.md`)  
-4. 🟡 Golden questions in progress — **11/27 tools measured**, 12 asks (see `Module1_Copilot_Tool_Test_Questions.md`); top payloads: `get_revenue_summary` 3,963 chars, `get_menu_health` 4,267 chars  
+4. 🟡 Golden questions in progress — **17/27 tools measured**, 17 asks (see `Module1_Copilot_Tool_Test_Questions.md`); top payloads: `get_revenue_summary` 4,404, `get_menu_health` 4,267, `get_operations_overview` 3,168; **blocker:** `ai/staff-ops` 404  
 5. ⬜ Split dashboard projectors + update prompt routing  
 6. ⬜ Slim composite AI routes if logs still show fat payloads  
 7. ⬜ Billing split (`get_payment_totals` / `get_payment_days`)  
@@ -74,6 +74,7 @@ Golden test questions: **`Module1_Copilot_Tool_Test_Questions.md`**
 
 - [x] Deploy analytics-service (post-backfill), analytics-edge-api, ai-edge-api, portal  
 - [x] FAB + date presets + NL override  
-- [x] Run golden questions (partial); logs + Mongo fields populate  
-- [ ] Remaining golden questions: revenue mix, voids, ops, payments, labor, platform (see test doc checklist)  
+- [x] Run golden questions (partial — 17/27 tools); logs + Mongo fields populate  
+- [ ] Remaining golden questions: voids, fulfillment, peak/hourly, cancellations, payment details, staff performance, reservations, platform (see test doc checklist)  
+- [ ] Deploy `ai/staff-ops` on analytics-edge-api (404 blocks `get_staff_ops_health`)  
 - [ ] Discount rate / tips / voids / staff ops / platform help  

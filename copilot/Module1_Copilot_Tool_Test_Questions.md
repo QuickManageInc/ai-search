@@ -22,21 +22,30 @@ Before building slim-split, run ~10–20 real questions in prod and look at whic
 
 | Metric | Finding |
 |---|---|
-| Tool routing | **12/12 completed asks routed correctly** (100%) |
-| Tools measured | **11/27** unique tools with token data |
+| Tool routing | **17/17 asks** primary tool correct; 2 cases stacked redundant tools |
+| Tools measured | **17/27** unique tools with token data |
 | Gemini 3.5 tool loop | Working after AI SDK v7 migration (no `thought_signature` errors) |
 | Fixed prompt overhead | ~3,600 chars (~900 tokens) but **~6,300–6,800 inputTokens** per 1-tool ask (27 tool schemas) |
-| Biggest payloads | `get_menu_health` **4,267** chars, `get_revenue_summary` **3,963** chars |
+| Biggest payloads | `get_revenue_summary` **4,404**, `get_menu_health` **4,267**, `get_operations_overview` **3,168** |
 | NL date override | Verified: “last 30 days” → `dateRangeSource: nl`, Jul 31 – Aug 29 |
 | Session follow-ups | Cache skipped (`reason: follow_up`); model re-fetches tools ✓ |
-| Latency | 5–11s total; TTFT ~3–4s after tool fetch |
+| Latency | 5–11s total; TTFT ~3–5s after tool fetch |
+| **Blocker found** | `get_staff_ops_health` → **404** `ai/staff-ops` on analytics-edge-api (dev) |
 
-**Slim-split priority (from measured `resultChars`):**
+**Slim-split priority (from measured `resultChars`, updated batch 2):**
 
-1. `get_revenue_summary` — 3,963 chars ← dashboard split next
-2. `get_menu_health` — 4,267 chars ← composite slim later
-3. `get_revenue_by_day` — ~1,800 chars — acceptable for now
-4. Menu atomics — 734–1,757 chars — low priority
+1. `get_revenue_summary` — **4,404** chars (31-day `days[]`) ← **dashboard split next**
+2. `get_menu_health` — **4,267** chars ← composite slim (phase 2)
+3. `get_operations_overview` — **3,168** chars ← ops daily series split
+4. `get_payment_overview` — **2,348** chars ← billing split (follow-up PR)
+5. `get_revenue_by_day` — ~1,800 chars — acceptable for now
+6. Menu atomics — 734–1,757 chars — low priority (schema overhead dominates)
+
+**Routing quirks (prompt tuning, not bugs):**
+
+- `get_revenue_mix` with empty breakdown → model also called `get_revenue_summary` (+4,404 chars, **10,189 tokens**)
+- `get_revenue_diagnosis` → also called `get_period_comparison` (redundant)
+- `get_staff_ops_health` 404 → model recovered with `get_workforce_summary` + `get_attendance_summary` (**11,888 tokens**)
 
 ---
 
@@ -44,28 +53,24 @@ Before building slim-split, run ~10–20 real questions in prod and look at whic
 
 Use **new conversation** for each unless noted. Date range: **Feb 3–28, 2026** unless testing NL.
 
-### Revenue & orders (8 remaining)
+### Revenue & orders (6 remaining)
 
-- [ ] `get_revenue_mix` — *What share of sales is dine-in vs takeout?*
 - [ ] `get_period_comparison` — *How did we do vs last week?* (solo; not stacked after diagnosis)
 - [ ] `get_void_summary` — *How many voids did we have and what's the void rate?*
-- [ ] `get_operations_overview` — *What's our order completion rate?*
 - [ ] `get_fulfillment` — *How long does kitchen prep take on average?*
 - [ ] `get_peak_hours` — *When are our busiest hours?*
 - [ ] `get_hourly_pattern` — *Show me hour-by-hour order traffic.*
 - [ ] `get_cancellation_stats` — *Why are orders getting cancelled?*
 
-### Payments (2)
+### Payments (1)
 
-- [ ] `get_payment_overview` — *How much is collected vs outstanding?*
 - [ ] `get_payment_details` — *What's our discount rate and tip rate?*
 
-### People & labor (4)
+### People & labor (2)
 
 - [ ] `get_staff_performance` — *Who were my top and bottom staff by sales? Include tips.*
-- [ ] `get_staff_ops_health` — *How's staffing and labor ops looking?*
-- [ ] `get_workforce_summary` — *How many employees do we have and any permit expirations?*
-- [ ] `get_attendance_summary` — *How many clock-ins did we have this period?*
+- [ ] `get_workforce_summary` — *How many employees do we have and any permit expirations?* (solo — already hit via staff_ops fallback)
+- [ ] `get_attendance_summary` — *How many clock-ins did we have this period?* (solo)
 
 ### Guests & platform (3)
 
@@ -81,9 +86,14 @@ Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 - [ ] *Compare last week to the week before*
 - [ ] *Revenue for last 7 days*
 
+### Deploy / fix before re-test
+
+- [ ] **`ai/staff-ops` route** — 404 on dev analytics-edge-api; blocks `get_staff_ops_health`
+
 ### Optional re-runs
 
 - [ ] `get_revenue_summary` — new conversation, first turn only (baseline tokens without session history)
+- [ ] `get_revenue_mix` — Feb 3–28, new conversation (expect **796 chars**, 1 tool only — no summary stack)
 - [ ] `get_revenue_diagnosis` — confirm model uses **one** tool when prompt says not to stack comparison
 
 ---
@@ -118,21 +128,22 @@ Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 |---|---|---|---|---:|---:|---|
 | ✅ | `get_revenue_summary` | How were overall sales this period? | ✓ | 7,660 | **3,963** | `a042cc79`; follow-up in session — re-run solo for baseline |
 | ✅ | `get_revenue_by_day` | Show me daily revenue for the last 30 days. | ✓ | 6,519 | 1,863 | `4bf071f3`; NL → Jul 31–Aug 29, $0 (no orders) |
-| ⬜ | `get_revenue_mix` | What share of sales is dine-in vs takeout? | | | | |
+| ✅ | `get_revenue_mix` | What share of sales is dine-in vs takeout? | ✓ (+ `get_revenue_summary`) | 10,189 | 82 + **4,404** | `74cac7c6`; Jul 30–Aug 29 empty; stacked summary unnecessarily |
 | ✅ | `get_revenue_diagnosis` | Why were sales down this period? | ✓ (+ `get_period_comparison`) | 9,665 | 942 + 541 | `b66a6d81`; also called comparison — redundant |
 | ⬜ | `get_period_comparison` | How did we do vs last week? | | | | |
 | ⬜ | `get_void_summary` | How many voids did we have and what's the void rate? | | | | |
-| ⬜ | `get_operations_overview` | What's our order completion rate? | | | | |
+| ✅ | `get_operations_overview` | What's our order completion rate? | ✓ | 6,877 | **3,168** | `fb11eab8`; 97.2% completion; daily `days[]` bloat |
 | ⬜ | `get_fulfillment` | How long does kitchen prep take on average? | | | | |
 | ⬜ | `get_peak_hours` | When are our busiest hours? | | | | |
 | ⬜ | `get_hourly_pattern` | Show me hour-by-hour order traffic. | | | | |
 | ⬜ | `get_cancellation_stats` | Why are orders getting cancelled? | | | | |
 
-**Also tested (same tool, different phrasing):**
+**Also tested (same tool, different phrasing / follow-up):**
 
 | Status | Tool | Question | inputTokens | resultChars | Notes |
 |---|---|---|---:|---:|---|
-| ✅ | `get_revenue_by_day` | Show me daily revenue for this period. | 6,773 | 1,776 | `c03be51a`; follow-up, Feb 3–28, $1,656.51 / 36 orders |
+| ✅ | `get_revenue_by_day` | Show me daily revenue for this period. | 6,773 | 1,776 | `c03be51a`; follow-up, Feb 3–28 |
+| ✅ | `get_revenue_mix` | and for this date range | 6,248 | 796 | `c9d25464`; follow-up, Feb 3–28; POS 90.9% / KIOSK 9.1% |
 
 ---
 
@@ -140,7 +151,7 @@ Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 
 | Status | Tool expected | Test question | Tools called | inputTokens | resultChars | Notes |
 |---|---|---|---|---:|---:|---|
-| ⬜ | `get_payment_overview` | How much is collected vs outstanding? | | | | |
+| ✅ | `get_payment_overview` | How much is collected vs outstanding? | ✓ | 6,641 | **2,348** | `c760f9a7`; $1,651.92 collected / $4.59 outstanding; daily `days[]` |
 | ⬜ | `get_payment_details` | What's our discount rate and tip rate? | | | | |
 
 ---
@@ -150,9 +161,9 @@ Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 | Status | Tool expected | Test question | Tools called | inputTokens | resultChars | Notes |
 |---|---|---|---|---:|---:|---|
 | ⬜ | `get_staff_performance` | Who were my top and bottom staff by sales? Include tips. | | | | |
-| ⬜ | `get_staff_ops_health` | How's staffing and labor ops looking? | | | | |
-| ⬜ | `get_workforce_summary` | How many employees do we have and any permit expirations? | | | | |
-| ⬜ | `get_attendance_summary` | How many clock-ins did we have this period? | | | | |
+| ⚠️ | `get_staff_ops_health` | How's staffing and labor ops looking? | ✓ (+ fallbacks) | 11,888 | 97 + 248 + 110 | `dbd2d109`; **404** `ai/staff-ops`; fell back to workforce + attendance |
+| 🟡 | `get_workforce_summary` | *(via staff_ops fallback)* | ✓ | — | 248 | 6 employees, 0 new hires, 0 permit expiries |
+| 🟡 | `get_attendance_summary` | *(via staff_ops fallback)* | ✓ | — | 110 | 0 clock-ins Feb 3–28 |
 
 ---
 
@@ -185,15 +196,18 @@ Measured vs expected — prioritize for slim-split:
 
 | Tool | Measured | Priority |
 |---|---|---|
+| `get_revenue_summary` | **4,404** (max) / 3,963 | **Dashboard split next** |
 | `get_menu_health` | **4,267** | Composite slim (phase 2) |
-| `get_revenue_summary` | **3,963** | **Dashboard split next** |
+| `get_operations_overview` | **3,168** | Ops daily series split |
+| `get_payment_overview` | **2,348** | Billing split (follow-up PR) |
 | `get_revenue_by_day` | ~1,800 | OK for now |
+| `get_revenue_mix` | 796 (with data) / 82 (empty) | OK — watch summary stack on empty |
 | `get_revenue_diagnosis` | 942 | OK (composite already thin) |
 | `get_period_comparison` | 541 | OK |
 | Menu atomics | 734–1,757 | Low — schema overhead dominates |
-| `get_staff_ops_health` | — | Not tested yet |
-| `get_payment_overview` | — | Not tested yet |
-| `get_operations_overview` | — | Not tested yet |
+| `get_staff_ops_health` | 97 (error JSON) | **Deploy `ai/staff-ops` route** |
+| `get_workforce_summary` | 248 | OK (atomic) |
+| `get_attendance_summary` | 110 | OK (atomic) |
 
 ---
 
@@ -237,6 +251,11 @@ db.ai_usage_log.aggregate([
 | `b66a6d81-285e-4a20-9a12-21007fe5d2d4` | `get_revenue_diagnosis`, `get_period_comparison` |
 | `a042cc79-c0d3-41b9-ab5e-84b488caa9da` | `get_revenue_summary` |
 | `e6a07c03-a0bf-4666-9ec2-9dd1bc837921` | `get_menu_health` |
+| `74cac7c6-2c19-4cee-9087-5e1e9ebdc7cf` | `get_revenue_mix`, `get_revenue_summary` (Jul 30–Aug 29 empty) |
+| `c9d25464-dd6c-49de-8fef-ddb4dc856173` | `get_revenue_mix` (follow-up, Feb 3–28) |
+| `fb11eab8-e81d-44a9-a847-06967c54e82a` | `get_operations_overview` |
+| `c760f9a7-8b31-4d02-8f99-f825b6af4289` | `get_payment_overview` |
+| `dbd2d109-f5ac-4c47-a3ca-7fbe1a63a33e` | `get_staff_ops_health` (404), `get_workforce_summary`, `get_attendance_summary` |
 
 ---
 
