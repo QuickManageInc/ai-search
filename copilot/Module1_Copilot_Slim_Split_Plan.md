@@ -1,6 +1,6 @@
 # Copilot slim-split & token plan
 
-Status: **dashboard slim-split shipped** — billing/ops next  
+Status: **billing + ops slim-split shipped** (2026-08-30)  
 Related: [README.md](./README.md), [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md), [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md)  
 Also: date presets + NL override + full-range daily series + per-ask fetch memo already landed.
 
@@ -24,7 +24,8 @@ Still open: ~~split dashboard projections~~ ✅ dashboard slim-split shipped (20
 |---|---|
 | Daily series | **One tool:** slim `get_revenue_by_day` only — no `get_revenue_days` |
 | `get_revenue_summary` compat | **Totals + best/worst** — no kitchen (add `get_kitchen_activity` later) |
-| Billing split | **Follow-up PR** after dashboard |
+| Billing split | ✅ `get_payment_totals`, `get_payment_days`; thin `get_payment_overview` |
+| Ops split | ✅ `get_operations_totals`, `get_operations_days`; thin `get_operations_overview` |
 
 ## Proposed dashboard tools (next pass)
 
@@ -38,6 +39,30 @@ Shared `fetchOnce('orders/dashboard-summary')`:
 | `get_revenue_summary` | totals + best/worst (compat alias, no days[]) |
 
 Daily trend → existing **`get_revenue_by_day`** (`orders/revenue`).
+
+## Billing tools (shipped 2026-08-30)
+
+Shared `fetchOnce('billing/overview')`:
+
+| Tool | Projection |
+|---|---|
+| `get_payment_totals` | period + billing counts + collected/outstanding + method split |
+| `get_payment_days` | daily billings series only |
+| `get_payment_overview` | compat alias → same as totals (no `days[]`) |
+
+Tips/discounts/card brands → existing **`get_payment_details`** (`billing/payment-analytics`).
+
+## Operations tools (shipped 2026-08-30)
+
+Shared `fetchOnce('orders/overview')`:
+
+| Tool | Projection |
+|---|---|
+| `get_operations_totals` | period + completion/cancellation summary |
+| `get_operations_days` | daily ops stats series only |
+| `get_operations_overview` | compat alias → same as totals (no `days[]`) |
+
+Cancel breakdown → **`get_cancellation_stats`**; prep time → **`get_fulfillment`**.
 
 ## Principle
 
@@ -54,8 +79,9 @@ edge fetch (fat, OK)  →  request cache (once)  →  projector per tool (thin) 
 5. ✅ Focus-based tool filtering (`AI_TOOL_FILTER`) — tab `hints`; **next:** [intent mode](./Module1_Copilot_Intent_Tool_Filter_Plan.md)  
 6. ✅ Split dashboard projectors (`get_revenue_totals`, `get_best_worst_days`, `get_kitchen_activity`; thin `get_revenue_summary`)  
 7. ⬜ Slim composite AI routes if logs still show fat payloads  
-8. ⬜ Billing split (`get_payment_totals` / `get_payment_days`)  
-9. ⬜ Optional: provider prompt caching  
+8. ✅ Billing split (`get_payment_totals` / `get_payment_days`; thin `get_payment_overview`)  
+9. ✅ Ops split (`get_operations_totals` / `get_operations_days`; thin `get_operations_overview`)  
+10. ⬜ Optional: provider prompt caching  
 
 ## `ai_usage_log` fields (new)
 

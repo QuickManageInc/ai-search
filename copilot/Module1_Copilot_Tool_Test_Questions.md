@@ -68,8 +68,8 @@ inputTokens ≈ ~5,500 fixed (schemas + messages) + tool result tokens + extra L
 | Priority | Lever | Est. savings | Status |
 |---|---|---:|---|
 | 1 | **Tool filtering** — question **intent** mode (default) | ~3,500–4,500 tok/step | ✅ Shipped — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
-| 2 | **Slim-split payloads** (`get_revenue_summary`, ops, billing) | 500–1,100 tok when those tools run | ✅ Dashboard done; ops/billing next |
-| 3 | **Prompt tuning** — no stacking summary after mix/diagnosis | 2,000–4,000 tok on bad paths | ⬜ |
+| 2 | **Slim-split payloads** (`get_revenue_summary`, ops, billing) | 500–1,100 tok when those tools run | ✅ Dashboard + billing/ops shipped — re-measure |
+| 3 | **Prompt tuning** — no stacking summary after mix/diagnosis | 2,000–4,000 tok on bad paths | ✅ Verified 2026-08-30 — mix **5,478** tok (was 10,189), diagnosis **4,590**, compare **4,339–6,059** |
 | 4 | Shorten system prompt / dedupe descriptions | 300–600 tok | ⬜ |
 | 5 | Gemini context caching (system + schemas) | varies | ⬜ |
 
@@ -96,10 +96,10 @@ Logs / Mongo: `promptMetrics.toolFilterMode`, `intentCategories`, `activeToolNam
 5. `get_revenue_by_day` — ~1,800 chars — acceptable for now
 6. Menu atomics — 734–1,757 chars — low priority (schema overhead dominates)
 
-**Routing quirks (prompt tuning, not bugs):**
+**Routing quirks (prompt tuning — anti-stacking shipped 2026-08-30):**
 
-- `get_revenue_mix` with empty breakdown → model also called `get_revenue_summary` (+4,404 chars, **10,189 tokens**)
-- `get_revenue_diagnosis` → also called `get_period_comparison` (redundant)
+- ~~`get_revenue_mix` with empty breakdown → model also called `get_revenue_summary` (+4,404 chars, **10,189 tokens**)~~ → ✅ fixed: **5,478 tok**, 1 tool (`bc6eb8bc`)
+- ~~`get_revenue_diagnosis` → also called `get_period_comparison` (redundant)~~ → ✅ fixed: **4,590 tok**, 1 tool (`d7a35c26`)
 - `get_staff_ops_health` 404 → model recovered with `get_workforce_summary` + `get_attendance_summary` (**11,888 tokens**)
 
 ---
@@ -133,13 +133,16 @@ Use **new conversation** for each unless noted. Date range: **Feb 3–28, 2026**
 - [ ] `get_platform_capabilities` — *What can you help me with?*
 - [ ] `get_feature_howto` — *How do I schedule shifts in QuickManage?*
 
-### NL date override (3)
+### NL date override (6)
 
 Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 
 - [ ] *How were sales yesterday?*
 - [ ] *Compare last week to the week before*
 - [ ] *Revenue for last 7 days*
+- [ ] *Compare the last week of february and the first week of mars* → dual window + `get_period_comparison` with `compare=custom`
+- [ ] *Compare 17 feb to 28 feb with 30 mar to 15 apr* → explicit day ranges (max 31 days each)
+- [ ] *Compare february with march* → full months (clamped to 31 days)
 
 ### Deploy / fix before re-test
 
@@ -149,8 +152,10 @@ Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 
 - [ ] `get_revenue_summary` — re-run *How were overall sales this period?*; expect **resultChars ~400–600** (was 3,963–4,404)
 - [ ] `get_revenue_totals` / `get_best_worst_days` / `get_kitchen_activity` — solo asks (new tools)
-- [ ] `get_revenue_mix` — Feb 3–28, new conversation (expect **796 chars**, 1 tool only — no summary stack)
-- [ ] `get_revenue_diagnosis` — confirm model uses **one** tool when prompt says not to stack comparison
+- [ ] `get_revenue_mix` — Feb 3–28, new conversation (expect **796 chars**, 1 tool only — ✅ verified `bc6eb8bc` **5,478 tok**)
+- [ ] `get_revenue_diagnosis` — confirm model uses **one** tool (✅ verified `d7a35c26` **4,590 tok**)
+- [ ] `get_payment_overview` — *How much is collected vs outstanding?* (expect **~400–600** resultChars, was **2,348**)
+- [ ] `get_operations_overview` — *What's our order completion rate?* (expect **~300–500** resultChars, was **3,168**)
 
 ---
 
@@ -242,6 +247,9 @@ Ask with **Feb 3–28** preset selected; server should override for that turn:
 | ✅ | Show me daily revenue for the **last 30 days** | `nl` | `nl` | Matched `last 30 days` → Jul 31 – Aug 29 |
 | ⬜ | How were sales **yesterday**? | `nl` | | |
 | ⬜ | Compare **last week** to the week before | `nl` | | |
+| ⬜ | Compare the **last week of february** and the **first week of mars** | `nl` + dual | | `compareRange` + `compare=custom` |
+| ⬜ | Compare **17 feb to 28 feb** with **30 mar to 15 apr** | `nl` + dual | | day-month ranges |
+| ⬜ | Compare **february with march** | `nl` + dual | | full months |
 | ⬜ | Revenue for **last 7 days** | `nl` | | |
 
 ---
@@ -257,8 +265,8 @@ Measured vs expected — prioritize for slim-split:
 | `get_best_worst_days` | ~150–250 (est.) | New atomic tool |
 | `get_kitchen_activity` | ~100–150 (est.) | New atomic tool |
 | `get_menu_health` | **4,267** | Composite slim (phase 2) |
-| `get_operations_overview` | **3,168** | Ops daily series split |
-| `get_payment_overview` | **2,348** | Billing split (follow-up PR) |
+| `get_operations_overview` | **3,168** → **~300–500** target | ✅ Slim-split shipped — re-measure |
+| `get_payment_overview` | **2,348** → **~400–600** target | ✅ Slim-split shipped — re-measure |
 | `get_revenue_by_day` | ~1,800 | OK for now |
 | `get_revenue_mix` | 796 (with data) / 82 (empty) | OK — watch summary stack on empty |
 | `get_revenue_diagnosis` | 942 | OK (composite already thin) |

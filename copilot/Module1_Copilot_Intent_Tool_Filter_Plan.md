@@ -126,7 +126,7 @@ Reuse `TOOLS_BY_FOCUS` categories; trigger from **question text**, not portal ta
 1. **Dynamic routing list** — system prompt only mentions tools in `activeToolNames` for this turn.
 2. **Remove dead tool names** — delete references to unregistered tools: `get_scheduling_summary`, `get_time_off_summary`, `get_swaps_summary`, `get_attendance_trend`, `get_compliance_status` (unless we register them).
 3. **Shorten system prompt** — drop long routing table (lines 40–61 in `copilot.ts`); tool `description` fields already carry contrastive routing.
-4. **Anti-stacking rules** — keep: do not call `get_revenue_summary` after `get_revenue_mix` / `get_revenue_diagnosis` when data is sufficient.
+4. **Anti-stacking rules** — ✅ dynamic section in `copilot.ts` + strengthened composite tool descriptions (2026-08-30).
 
 ---
 

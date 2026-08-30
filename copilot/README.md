@@ -179,7 +179,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 1. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
 2. **Finish golden questions** without tab context — [Test questions](./Module1_Copilot_Tool_Test_Questions.md)
-3. **Slim-split billing/ops** — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md)
+3. **Slim-split billing/ops** — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
 4. **Fix data honesty** — discount count in CDC — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md) + [Inventory](./Module1_Copilot_Tools_Inventory.md)
 5. **Deploy `ai/staff-ops`** — unblocks `get_staff_ops_health`
 
