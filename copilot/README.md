@@ -105,8 +105,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - Env: `AI_TOOL_FILTER=intent`
 
 **What we discussed:** User does not want tab-driven context; ~85% of tokens are schemas; intent router is best fit for 27 Gemini tools.  
-**Status:** **Planned — implement next**  
-**Code touchpoints:** `toolFocusMap.ts`, `copilot.service.ts`, `copilot.ts` (prompts)
+**Status:** **Shipped** (2026-08-30) — `AI_TOOL_FILTER=intent` default  
+**Code touchpoints:** `questionIntent.ts`, `toolFocusMap.ts`, `copilot.service.ts`, `copilot.ts` (prompts)
 
 ---
 
@@ -171,13 +171,13 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Slim-split (dashboard) | Thin `get_revenue_summary`; atomic totals / best-worst / kitchen |
 | Tab tool filter (`hints`) | Shipped — saves ~3.5k tok/step but **wrong routing** when tab ≠ question |
 | Dev auth | `AUTH_DISABLED` on analytics-edge-api for local JWKS bypass |
-| **Intent filter (next)** | Replace tab driver with question keywords + CORE tools; dynamic prompt tool list |
+| **Intent filter** | Replace tab driver with question keywords + CORE tools | ✅ Shipped 2026-08-30 |
 
 ---
 
 ## Current priorities
 
-1. **Implement intent tool filter** — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md)
+1. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
 2. **Finish golden questions** without tab context — [Test questions](./Module1_Copilot_Tool_Test_Questions.md)
 3. **Slim-split billing/ops** — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md)
 4. **Fix data honesty** — discount count in CDC — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md) + [Inventory](./Module1_Copilot_Tools_Inventory.md)
@@ -189,8 +189,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `AI_TOOL_FILTER` | `hints` today → **`intent` after ship** | Tool registry mode |
-| `AI_TOOL_FILTER_MAX` | `15` (planned) | Cap tools per ask in intent mode |
+| `AI_TOOL_FILTER` | `hints` today → **`intent` (shipped)** | Tool registry mode |
+| `AI_TOOL_FILTER_MAX` | `15` | Cap tools per ask in intent mode |
 | `AI_MAX_STEPS` | `5` | Max LLM tool loop steps |
 | `AI_MODEL` | `gemini-3.5-flash-lite` | Primary model |
 

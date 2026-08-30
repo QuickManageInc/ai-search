@@ -1,7 +1,7 @@
 # Copilot intent-based tool filtering (replace tab context)
 
-Status: **planned — implement next**  
-Supersedes: tab-driven `focusHints` as the primary tool filter (keep as optional soft hint only)  
+Status: **shipped** (2026-08-30)  
+Supersedes: tab-driven `focusHints` as the primary tool filter (portal `context` ignored in `intent` mode)  
 Related: [README.md](./README.md), [Module1_Copilot_Slim_Split_Plan.md](./Module1_Copilot_Slim_Split_Plan.md), [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md)
 
 ---
@@ -142,12 +142,12 @@ Reuse `TOOLS_BY_FOCUS` categories; trigger from **question text**, not portal ta
 
 ### Code (`ai-edge-api`)
 
-- [ ] Add `detectCategoriesFromQuestion(question: string): ContextCategory[]` — keyword map in `toolFocusMap.ts` or `questionIntent.ts`
-- [ ] Add `resolveActiveToolNamesFromIntent(question, focusHints?)` — CORE ∪ expanded, capped
-- [ ] Wire `AI_TOOL_FILTER=intent` in `getToolFilterMode()`; default to `intent`
-- [ ] Pass `question` into `filterAnalyticsTools()` from `copilot.service.ts`
-- [ ] `buildToolSystemPrompt({ activeToolNames })` — dynamic tool list in prompt
-- [ ] Log `intentCategories`, `activeToolNames`, `registeredToolCount` in `promptMetrics`
+- [x] Add `detectCategoriesFromQuestion(question)` — `src/tools/questionIntent.ts`
+- [x] Add `resolveActiveToolNames({ question, focusHints })` — CORE ∪ expanded, capped
+- [x] Wire `AI_TOOL_FILTER=intent` in `getToolFilterMode()`; default to `intent`
+- [x] Pass `question` into `filterAnalyticsTools()` from `copilot.service.ts`
+- [x] `buildToolSystemPrompt({ activeToolNames })` — dynamic tool routing list
+- [x] Log `intentCategories`, `activeToolNames`, `toolFilterMode` in `promptMetrics`
 - [ ] Metric: `routing.phantom` when model calls tool not in `activeToolNames`
 
 ### Tests / golden questions

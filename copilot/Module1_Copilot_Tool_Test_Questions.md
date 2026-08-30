@@ -67,25 +67,25 @@ inputTokens ≈ ~5,500 fixed (schemas + messages) + tool result tokens + extra L
 
 | Priority | Lever | Est. savings | Status |
 |---|---|---:|---|
-| 1 | **Tool filtering** — tab `hints` → **question intent** (planned) | ~3,500–4,500 tok/step | ✅ Tab filter shipped; ⬜ [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
+| 1 | **Tool filtering** — question **intent** mode (default) | ~3,500–4,500 tok/step | ✅ Shipped — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
 | 2 | **Slim-split payloads** (`get_revenue_summary`, ops, billing) | 500–1,100 tok when those tools run | ✅ Dashboard done; ops/billing next |
 | 3 | **Prompt tuning** — no stacking summary after mix/diagnosis | 2,000–4,000 tok on bad paths | ⬜ |
 | 4 | Shorten system prompt / dedupe descriptions | 300–600 tok | ⬜ |
 | 5 | Gemini context caching (system + schemas) | varies | ⬜ |
 
-### Tool filtering (shipped 2026-08-29)
+### Tool filtering (shipped 2026-08-30 — intent mode)
 
-Env: `AI_TOOL_FILTER` — `hints` (default) | `always` | `off`
+Env: `AI_TOOL_FILTER` — **`intent` (default)** | `hints` | `always` | `off`  
+Env: `AI_TOOL_FILTER_MAX` — default `15` (cap per ask in intent mode)
 
 | Mode | Behavior |
-|---|---|
-| `hints` | Filter when portal sends `context` / `focusHints`; **all 27 tools** when context empty (global FAB) |
-| `always` | Filter always; empty context → **core ~9 tools** (composites + platform + summary/by_day) |
-| `off` | All 27 tools every ask (baseline for A/B) |
+|------|----------|
+| **`intent`** | CORE ~9 tools + categories detected from **question keywords**; portal `context` ignored |
+| `hints` | Legacy tab filter when portal sends `context` / `focusHints` |
+| `always` | CORE ~9 tools only, no keyword expansion |
+| `off` | All 27 tools every ask (A/B baseline) |
 
-**Example — `focusHints: ['revenue']`:** registers **11 tools** (9 revenue + 2 platform) instead of 27.
-
-Logs / Mongo: `promptMetrics.toolFilterActive`, `activeToolNames`, `registeredToolCount`.
+Logs / Mongo: `promptMetrics.toolFilterMode`, `intentCategories`, `activeToolNames`, `registeredToolCount`.
 
 **Slim-split priority (from measured `resultChars`, updated batch 2):**
 
