@@ -1,7 +1,8 @@
 # Copilot slim-split & token plan
 
-Status: **observability shipped** — dashboard tool split next  
-Related: date presets + NL override + full-range daily series + per-ask fetch memo already landed.
+Status: **dashboard slim-split shipped** — billing/ops next  
+Related: [README.md](./README.md), [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md), [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md)  
+Also: date presets + NL override + full-range daily series + per-ask fetch memo already landed.
 
 ## Problem
 
@@ -12,9 +13,10 @@ We already:
 
 1. Slim projectors (`slimDashboardSummary`, etc.) before the model sees data
 2. **Per-ask fetch memo** in `createAnalyticsTools` — one HTTP call per unique edge route+query
-3. **`ai_usage_log` observability** — `promptMetrics`, `llmInputMessages`, `toolResults`, `llmSteps`, pre-LLM log `copilot.llm.input.before_call`
+3. ✅ **`ai_usage_log` observability** — `promptMetrics`, `llmInputMessages`, `toolResults`, `llmSteps`, pre-LLM log `copilot.llm.input.before_call`
+4. ✅ **Focus-based tool filtering** — `src/tools/toolFocusMap.ts`, env `AI_TOOL_FILTER` (default `hints`)
 
-Still open: split dashboard projections so totals-only questions don't get 31 daily rows.
+Still open: ~~split dashboard projections~~ ✅ dashboard slim-split shipped (2026-08-29).
 
 ## Locked decisions
 
@@ -48,11 +50,12 @@ edge fetch (fat, OK)  →  request cache (once)  →  projector per tool (thin) 
 1. ✅ Request fetch memo  
 2. ✅ Full-range days in slim DTOs (drop last-7 trap)  
 3. ✅ Observability in `ai_usage_log` + structured logs (see `Module1_Copilot_Tool_Test_Questions.md`)  
-4. 🟡 Golden questions in progress — **17/27 tools measured**, 17 asks (see `Module1_Copilot_Tool_Test_Questions.md`); top payloads: `get_revenue_summary` 4,404, `get_menu_health` 4,267, `get_operations_overview` 3,168; **blocker:** `ai/staff-ops` 404  
-5. ⬜ Split dashboard projectors + update prompt routing  
-6. ⬜ Slim composite AI routes if logs still show fat payloads  
-7. ⬜ Billing split (`get_payment_totals` / `get_payment_days`)  
-8. ⬜ Optional: provider prompt caching  
+4. 🟡 Golden questions — **17/27 tools measured**; token anatomy in test doc  
+5. ✅ Focus-based tool filtering (`AI_TOOL_FILTER`) — tab `hints`; **next:** [intent mode](./Module1_Copilot_Intent_Tool_Filter_Plan.md)  
+6. ✅ Split dashboard projectors (`get_revenue_totals`, `get_best_worst_days`, `get_kitchen_activity`; thin `get_revenue_summary`)  
+7. ⬜ Slim composite AI routes if logs still show fat payloads  
+8. ⬜ Billing split (`get_payment_totals` / `get_payment_days`)  
+9. ⬜ Optional: provider prompt caching  
 
 ## `ai_usage_log` fields (new)
 
@@ -60,7 +63,7 @@ edge fetch (fat, OK)  →  request cache (once)  →  projector per tool (thin) 
 |---|---|
 | `requestId` | Correlate with HTTP / logs |
 | `dateRange` | Effective window (`source`: request \| nl) |
-| `promptMetrics` | Chars/tokens of initial messages before agent loop |
+| `promptMetrics` | Chars/tokens of initial messages; `registeredToolCount`, `toolFilterActive`, `activeToolNames` |
 | `llmInputMessages` | Role + char count + preview per message |
 | `toolResults` | Per tool: `resultChars`, `fetchMs`, JSON preview |
 | `llmSteps` | SDK step index, tool calls, tool result chars |

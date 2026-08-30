@@ -2,7 +2,7 @@
 
 > **Scope:** Expand `ai-edge-api` from a Reports-only chat into a Square/Toast-style merchant copilot.  
 > **Out of scope:** Module 2 (revenue forecasting), guest/kiosk product suggestions (deferred).  
-> **Related:** [QuickManage_AI_Architecture.md](./QuickManage_AI_Architecture.md), [Module1_Context_Optimization_Plan.md](./Module1_Context_Optimization_Plan.md), [Module1_Response_Accuracy_Plan.md](./Module1_Response_Accuracy_Plan.md)
+> **Related:** [README.md](./README.md) (copilot doc index), [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md), [../Module1_Context_Optimization_Plan.md](../Module1_Context_Optimization_Plan.md), [../Module1_Response_Accuracy_Plan.md](../Module1_Response_Accuracy_Plan.md)
 
 ---
 

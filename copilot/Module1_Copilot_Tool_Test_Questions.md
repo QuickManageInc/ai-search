@@ -1,5 +1,7 @@
 # Copilot golden test questions (token + routing)
 
+Index: [README.md](./README.md) · Intent filter plan: [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md)
+
 Use these after deploying observability (`ai_usage_log` + `copilot.llm.input.before_call` logs).
 
 **How to test**
@@ -32,9 +34,62 @@ Before building slim-split, run ~10–20 real questions in prod and look at whic
 | Latency | 5–11s total; TTFT ~3–5s after tool fetch |
 | **Blocker found** | `get_staff_ops_health` → **404** `ai/staff-ops` on analytics-edge-api (dev) |
 
+---
+
+## Input token anatomy (why ~6,500 tokens on a 1-tool ask)
+
+`promptMetrics.approxPromptTokens` (~900) counts **message text only** (system + history + user). It does **not** include tool schemas. Gemini `inputTokens` is the full bill.
+
+| Component | ~Tokens (typical 1-tool ask) | Share | Where |
+|---|---:|---:|---|
+| **27 tool schemas** | ~5,500–5,800 | **~85%** | Every LLM step resends all registered tools |
+| System prompt | ~900 | ~14% | `buildToolSystemPrompt()` ~3,500 chars |
+| User question | ~10 | &lt;1% | |
+| Tool result JSON | +450–1,100 | step 2+ | Fat tools dominate here too |
+| Session history | +50–150 | follow-ups | Grows per turn |
+
+**Formula from golden runs:**
+
+```
+inputTokens ≈ ~5,500 fixed (schemas + messages) + tool result tokens + extra LLM steps
+```
+
+**Multi-step agent loop:** `streamWithTools` runs up to `AI_MAX_STEPS` (default 5). Each step resends system + tools + growing transcript. Cumulative `inputTokens` spikes when the model stacks tools (e.g. mix + summary → **10,189**; staff_ops fallbacks → **11,888**).
+
+### What is NOT the main cost
+
+- **System prompt** is large (~3,500 chars) but secondary vs tool schemas.
+- **Menu atomics** have small payloads (734–1,757 chars) — slim-split there is low ROI vs schema overhead.
+- System prompt **duplicates** tool routing rules already in each tool `description` (~4,800 chars total across 27 tools).
+- System prompt references **4 tools not registered**: `get_scheduling_summary`, `get_time_off_summary`, `get_swaps_summary`, `get_compliance_status`.
+
+### Mitigation priority
+
+| Priority | Lever | Est. savings | Status |
+|---|---|---:|---|
+| 1 | **Tool filtering** — tab `hints` → **question intent** (planned) | ~3,500–4,500 tok/step | ✅ Tab filter shipped; ⬜ [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
+| 2 | **Slim-split payloads** (`get_revenue_summary`, ops, billing) | 500–1,100 tok when those tools run | ✅ Dashboard done; ops/billing next |
+| 3 | **Prompt tuning** — no stacking summary after mix/diagnosis | 2,000–4,000 tok on bad paths | ⬜ |
+| 4 | Shorten system prompt / dedupe descriptions | 300–600 tok | ⬜ |
+| 5 | Gemini context caching (system + schemas) | varies | ⬜ |
+
+### Tool filtering (shipped 2026-08-29)
+
+Env: `AI_TOOL_FILTER` — `hints` (default) | `always` | `off`
+
+| Mode | Behavior |
+|---|---|
+| `hints` | Filter when portal sends `context` / `focusHints`; **all 27 tools** when context empty (global FAB) |
+| `always` | Filter always; empty context → **core ~9 tools** (composites + platform + summary/by_day) |
+| `off` | All 27 tools every ask (baseline for A/B) |
+
+**Example — `focusHints: ['revenue']`:** registers **11 tools** (9 revenue + 2 platform) instead of 27.
+
+Logs / Mongo: `promptMetrics.toolFilterActive`, `activeToolNames`, `registeredToolCount`.
+
 **Slim-split priority (from measured `resultChars`, updated batch 2):**
 
-1. `get_revenue_summary` — **4,404** chars (31-day `days[]`) ← **dashboard split next**
+1. `get_revenue_summary` — was **4,404** chars → **~400–600** expected after slim-split ← **re-test**
 2. `get_menu_health` — **4,267** chars ← composite slim (phase 2)
 3. `get_operations_overview` — **3,168** chars ← ops daily series split
 4. `get_payment_overview` — **2,348** chars ← billing split (follow-up PR)
@@ -92,7 +147,8 @@ Ask with **Feb 3–28** preset selected; confirm `dateRange.source: nl` in logs:
 
 ### Optional re-runs
 
-- [ ] `get_revenue_summary` — new conversation, first turn only (baseline tokens without session history)
+- [ ] `get_revenue_summary` — re-run *How were overall sales this period?*; expect **resultChars ~400–600** (was 3,963–4,404)
+- [ ] `get_revenue_totals` / `get_best_worst_days` / `get_kitchen_activity` — solo asks (new tools)
 - [ ] `get_revenue_mix` — Feb 3–28, new conversation (expect **796 chars**, 1 tool only — no summary stack)
 - [ ] `get_revenue_diagnosis` — confirm model uses **one** tool when prompt says not to stack comparison
 
@@ -196,7 +252,10 @@ Measured vs expected — prioritize for slim-split:
 
 | Tool | Measured | Priority |
 |---|---|---|
-| `get_revenue_summary` | **4,404** (max) / 3,963 | **Dashboard split next** |
+| `get_revenue_summary` | **4,404** (pre-split) → **~400–600** target | ✅ Slim-split shipped — re-measure |
+| `get_revenue_totals` | ~200–350 (est.) | New atomic tool |
+| `get_best_worst_days` | ~150–250 (est.) | New atomic tool |
+| `get_kitchen_activity` | ~100–150 (est.) | New atomic tool |
 | `get_menu_health` | **4,267** | Composite slim (phase 2) |
 | `get_operations_overview` | **3,168** | Ops daily series split |
 | `get_payment_overview` | **2,348** | Billing split (follow-up PR) |
