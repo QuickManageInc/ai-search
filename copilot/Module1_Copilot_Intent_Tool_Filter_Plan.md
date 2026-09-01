@@ -102,8 +102,28 @@ Reuse `TOOLS_BY_FOCUS` categories; trigger from **question text**, not portal ta
 
 - Vague questions → composites in CORE only (no atomics unless keywords demand specificity).
 - Specific questions → CORE + relevant category atomics.
-- **Cap** union at `AI_TOOL_FILTER_MAX` (default **15**); if over cap, prefer composites + highest-scoring category.
+- **Cap** union at `AI_TOOL_FILTER_MAX` (default **15**); fill order: **CORE → question-pinned tools → intent categories (score order) → alphabetical**.
 - **Ignore** portal `context` for filtering (or treat as lowest-priority tie-breaker only).
+
+### Adding new tools (today / tomorrow)
+
+When you register a new analytics tool:
+
+1. **`analyticsTools.ts`** — tool definition + slim projector if composite/large payload.
+2. **`toolFocusMap.ts`** — add to the right `TOOLS_BY_FOCUS[category]` (or `CORE_TOOL_NAMES` if composite).
+3. **`questionIntent.ts`** — keyword patterns for the category; add a **`TOOL_PIN_RULES`** entry if merchants name it directly (e.g. "inventory shrink").
+4. **`copilot.ts`** — `TOOL_ROUTING_HINTS` one-liner.
+5. **`toolCatalog.ts`** — catalog row (powers future `find_analytics_tools`).
+
+**Scale path:**
+
+| Tool count | Approach |
+|------------|----------|
+| **≤ ~40** | Intent + CORE + priority cap (current) — add keywords + pin rules per tool |
+| **40–60** | Raise `AI_TOOL_FILTER_MAX` slightly (16–18) or split composites further |
+| **60+** | Wire **`find_analytics_tools`** meta-tool (phase 2 below) — CORE + search only on turn 1 |
+
+Claude Code uses native `defer_loading`; we mirror it portably via intent today and ToolSearch tomorrow.
 
 ### New env / mode
 
@@ -148,6 +168,13 @@ Reuse `TOOLS_BY_FOCUS` categories; trigger from **question text**, not portal ta
 - [x] Pass `question` into `filterAnalyticsTools()` from `copilot.service.ts`
 - [x] `buildToolSystemPrompt({ activeToolNames })` — dynamic tool routing list
 - [x] Log `intentCategories`, `activeToolNames`, `toolFilterMode` in `promptMetrics`
+- [x] **Priority cap** (2026-09-01) — `getPinnedToolNames()` + category-order fill before alphabetical trim
+- [x] **Workforce keywords** — employees, permit, staffing, labor ops
+- [x] **Platform how-to guard** — skip workforce `scheduling` match on "how do I …" questions
+- [x] **Follow-up retry routing** — "redo" / "try again" reuses prior user turn for intent
+- [x] **Reservations in operations** — `get_reservations_summary` moved from revenue → operations category
+- [x] **Slim platform catalog** — `listPlatformCapabilitiesSlim()` (~70% smaller tool result)
+- [x] **Tool catalog scaffold** — `src/tools/toolCatalog.ts` for phase-2 ToolSearch
 - [ ] Metric: `routing.phantom` when model calls tool not in `activeToolNames`
 
 ### Tests / golden questions
