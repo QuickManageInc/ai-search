@@ -149,6 +149,7 @@ Run on **prod** with a real store. Mark each: **Correct?** **Fast?** **Right too
 | Insights (For You) | `ai-edge-api/src/handlers/insights.handler.ts` |
 | Golden runner | `ai-edge-api/scripts/run-golden-asks.ts` |
 | Prod smoke | `ai-edge-api/scripts/prod-smoke.ts` |
+| Deploy handoff (supervisor) | `ai-search/copilot/Module1_Copilot_Deploy_Handoff.md` |
 | Portal FAB | `quickmanage-merchant-portal/src/components/ai/AIAssistantPanel.jsx` |
 | Dashboard For You | `quickmanage-merchant-portal/src/components/ai/CopilotForYouPanel.jsx` |
 
@@ -186,5 +187,6 @@ Run on **prod** with a real store. Mark each: **Correct?** **Fast?** **Right too
 - [x] `get_feature_howto` demoted from CORE (legacy pin on feature id only)
 - [x] Flag-gated tasks (`requiresFeature` + portal `storeFeatures`)
 - [x] `get_revenue_totals` pin for total sales / order count phrasing
-- [x] Local smoke: `smoke:launch` + `test:validator`
-- [x] Doc refresh (this file + copilot README)
+- [x] Local smoke: `smoke:launch` + `test:validator` (kitchen pin fix verified)
+- [x] GitOps dev overlay + deploy handoff (`Module1_Copilot_Deploy_Handoff.md`)
+- [ ] Manual prod 12-ask smoke (deploy)
