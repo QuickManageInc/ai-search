@@ -120,7 +120,7 @@ Legacy                   get_feature_howto(featureId)
 
 ### Phase C — Product surfaces (partial ✅)
 
-7. [ ] `get_daily_highlights` — server endpoint + portal “For You” cards (**next big feature**)
+7. [x] `get_daily_highlights` — `GET /ai/copilot/insights` + portal “For You” cards on dashboard
 8. [x] Suggested prompts mix analytics + how-to
 9. [x] Global FAB / panel copy
 
@@ -187,11 +187,12 @@ See [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questio
 | Golden runner | `ai-edge-api/scripts/run-golden-asks.ts` (`npm run golden:platform`) |
 | Portal prompts | `quickmanage-merchant-portal/src/config/aiAssistant.config.js` |
 | Portal panel | `quickmanage-merchant-portal/src/components/ai/AIAssistantPanel.jsx` |
+| Dashboard For You | `GET /ai/copilot/insights` → `CopilotForYouPanel.jsx` on `DashboardPage.jsx` |
 
 ---
 
 ## Open questions
 
-1. **`get_daily_highlights`** — ship as `/ai/insights` endpoint before or after more portal areas?
+1. **`get_daily_highlights`** — ✅ shipped as `GET /api/v1/ai/copilot/insights` (REST only, no LLM tool)
 2. **`get_feature_howto`** — remove from CORE once task coverage is trusted?
 3. **Automation / MEV** — flag-gated stores: show tasks with `dataAvailable: false` when disabled?
