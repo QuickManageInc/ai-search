@@ -144,9 +144,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - New tool ideas without inventory; deep-link-only management actions
 - Build phases, golden questions, code touchpoints
 
-**What we discussed:** Analytics tools (~33) are in good shape; next focus is task-level how-tos and optional `search_platform_help`. Inventory explicitly deferred.  
-**Status:** Planned — not yet implemented.  
-**Code touchpoints:** `platformHelp.ts`, `questionIntent.ts`, `analyticsTools.ts`, portal `routes.js`, `analyticsService.js` (`downloadReportPdf`)
+**Status:** Phase A–B shipped (2026-09-01) — see [Platform help plan](./Module1_Copilot_Platform_Help_Plan.md).  
+**Code touchpoints:** `platformHelp.ts`, `platformTasks.ts`, `questionIntent.ts`, `analyticsTools.ts`
 
 ---
 
@@ -196,7 +195,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 ## Current priorities
 
 1. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
-2. **Platform help & task how-tos** — [Platform help plan](./Module1_Copilot_Platform_Help_Plan.md) — export report, schedule, orders, MEV
+2. **Platform help & task how-tos** — [Platform help plan](./Module1_Copilot_Platform_Help_Plan.md) — Phase A–C portal UX ✅; `get_daily_highlights` next
 3. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md) — **33 tools** measured (intent + slim batches)
 4. ~~**Slim-split billing/ops/menu**~~ — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
 5. **Fix data honesty** — discount count in CDC — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md) + [Inventory](./Module1_Copilot_Tools_Inventory.md)

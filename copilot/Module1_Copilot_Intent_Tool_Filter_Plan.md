@@ -152,8 +152,8 @@ Claude Code uses native `defer_loading`; we mirror it portably via intent today 
 
 ## Portal changes
 
-- **Stop sending** `context` / `focusHints` from Reports tab (or send for analytics only, not tool filter).
-- Global FAB ask path: `context: []` always.
+- [x] **Stop sending** `context` / `focusHints` from portal (removed 2026-09-01; API ignores in intent mode)
+- Global FAB ask path: no tab context — question intent only
 - Optional future: show “Tools considered: …” in debug/usage panel from `promptMetrics.activeToolNames`.
 
 ---

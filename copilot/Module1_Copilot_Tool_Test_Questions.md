@@ -525,8 +525,14 @@ Shipped in `ai-edge-api`: priority cap, workforce keywords, how-to guard, follow
 |---|---|---|---|
 | How many reservations and covers? | `get_reservations_summary` | ✅ | `d27f63fd` |
 | How many employees and permit expirations? | `get_workforce_summary` | ✅ | `d3f3a73a` |
-| How do I schedule shifts? | `get_feature_howto` (direct) | ✅ | `a93ede30` |
-| redo now (after ops ask) | same ops tool as prior turn | ✅ | `0b44057f` |
+| How do I schedule shifts? | `get_feature_howto` or `get_task_howto` | ✅ | `a93ede30` |
+| How do I download a report? | `search_platform_help` → `get_task_howto` | ✅ | `0f41225a` (8,010 tok) |
+| How do I check orders in the kitchen? | `search_platform_help` → `get_task_howto` | ✅ | `caa879d3` (7,939 tok) |
+| How do I export fiscal data? | `search_platform_help` → `get_task_howto` | ✅ | `d06b3b24` (7,886 tok) |
+
+**Platform task tools shipped 2026-09-01:** `get_task_howto`, `search_platform_help` (CORE, ~35 tools total).  
+**Automated batch:** `npm run golden:platform` in `ai-edge-api`.  
+**Token optimization:** deferred — ~8k tok/how-to from 3-step loop × 11 CORE schemas (see Platform Help plan Phase E).
 
 **Pre-fix batch (superseded for reservations / employees / how-to):**
 
@@ -547,7 +553,7 @@ Shipped in `ai-edge-api`: priority cap, workforce keywords, how-to guard, follow
 # Automated golden batch (local dev, AUTH_DISABLED on analytics-edge-api)
 cd ai-edge-api && npm run golden:asks        # full batch
 npm run golden:remaining                     # dashboard atomics + staff_ops
-npm run golden:redo                          # follow-up "redo now" test
+npm run golden:platform                    # platform task how-to batch
 
 grep 'copilot.llm.input.before_call'
 grep 'copilot.tool.result'
