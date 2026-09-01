@@ -195,4 +195,4 @@ See [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questio
 
 1. **`get_daily_highlights`** — ✅ shipped as `GET /api/v1/ai/copilot/insights` (REST only, no LLM tool)
 2. **`get_feature_howto`** — remove from CORE once task coverage is trusted?
-3. **Automation / MEV** — flag-gated stores: show tasks with `dataAvailable: false` when disabled?
+3. **Automation / MEV** — ✅ `requiresFeature` on tasks + portal `storeFeatures` (`socialPublisher`, `reservationManagement`)

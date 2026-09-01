@@ -1,8 +1,24 @@
 # Copilot — production launch plan
 
-Status: **Phase 1 in progress** (2026-09-01)  
+Status: **Phase 1 code complete** — Phase 2 in progress (local-only; prod deploy blocked)  
 Audience: engineering + deploy  
 Related: [Platform help](./Module1_Copilot_Platform_Help_Plan.md), [Intent filter](./Module1_Copilot_Intent_Tool_Filter_Plan.md), [Golden tests](./Module1_Copilot_Tool_Test_Questions.md)
+
+---
+
+## No prod access?
+
+Engineering can still validate locally:
+
+| Step | Command |
+|------|---------|
+| Validator unit self-test | `cd ai-edge-api && npm run test:validator` |
+| Health + insights + one ask | `npm run prod:smoke` (against local or staging URL) |
+| Full 12-ask launch matrix | `npm run smoke:launch` (~2 min, needs local APIs + Gemini key) |
+| Platform golden batch | `npm run golden:platform` |
+| Remaining routing batch | `npm run golden:remaining` |
+
+Hand deploy team: [Env vars](#env-vars-prod-checklist) + Phase 1.5 ops checklist below.
 
 ---
 
@@ -42,7 +58,7 @@ Copilot is **prod-ready** when:
 | Gateway | `/api/v1/ai/*` → `ai-edge-api`, SSE idle timeout ≥ 60s |
 | Data deps | Redis + Mongo + `analytics-edge-api` + `GOOGLE_GENERATIVE_AI_API_KEY` |
 
-**Script:** `cd ai-edge-api && npm run prod:smoke`
+**Script:** `cd ai-edge-api && npm run prod:smoke` (local/staging) or `npm run smoke:launch` for full 12-ask matrix
 
 ### 1.2 Trust — numeric answer validator
 
@@ -148,6 +164,7 @@ Run on **prod** with a real store. Mark each: **Correct?** **Fast?** **Right too
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Or AWS secret |
 | `CORS_ORIGIN` | Portal domain |
 | `AI_ANSWER_VALIDATOR_STRICT` | Optional — rewrite answer on mismatch |
+| Ask body `storeFeatures` | Optional — `{ reservationManagement, socialPublisher }` from portal |
 
 ---
 
@@ -166,6 +183,8 @@ Run on **prod** with a real store. Mark each: **Correct?** **Fast?** **Right too
 
 ### Phase 2
 
-- [ ] `get_feature_howto` demotion
-- [ ] Flag-gated tasks
-- [ ] Doc refresh
+- [x] `get_feature_howto` demoted from CORE (legacy pin on feature id only)
+- [x] Flag-gated tasks (`requiresFeature` + portal `storeFeatures`)
+- [x] `get_revenue_totals` pin for total sales / order count phrasing
+- [x] Local smoke: `smoke:launch` + `test:validator`
+- [x] Doc refresh (this file + copilot README)
