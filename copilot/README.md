@@ -15,6 +15,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Map domains → analytics routes → tools | [Module1_Copilot_Domain_Metrics_Map.md](./Module1_Copilot_Domain_Metrics_Map.md) |
 | Cut LLM tokens (payloads + tools) | [Module1_Copilot_Slim_Split_Plan.md](./Module1_Copilot_Slim_Split_Plan.md) + [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
 | Run golden tests and record baselines | [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md) |
+| Plan platform help & task how-tos (export report, schedule, orders) | [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
 
 ---
@@ -132,6 +133,23 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 ---
 
+### [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md)
+
+**What it is:** Plan for **Family 2 — platform / management help**: deep how-to for static product workflows (export report PDF, schedule shifts, check orders, MEV, automation).  
+**Topics covered:**
+
+- Current `platformHelp.ts` gaps vs portal routes
+- Three-layer helper model (capabilities → feature how-to → **task how-to**)
+- v1 ToolSearch lessons applied to platform help (always CORE; search over static catalog)
+- New tool ideas without inventory; deep-link-only management actions
+- Build phases, golden questions, code touchpoints
+
+**What we discussed:** Analytics tools (~33) are in good shape; next focus is task-level how-tos and optional `search_platform_help`. Inventory explicitly deferred.  
+**Status:** Planned — not yet implemented.  
+**Code touchpoints:** `platformHelp.ts`, `questionIntent.ts`, `analyticsTools.ts`, portal `routes.js`, `analyticsService.js` (`downloadReportPdf`)
+
+---
+
 ## Related docs outside this folder (`ai-search/`)
 
 | File | Purpose |
@@ -178,10 +196,11 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 ## Current priorities
 
 1. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
-2. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md) — **21/31 tools measured** (intent batch 2026-08-31)
-3. **Slim-split billing/ops** — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
-4. **Fix data honesty** — discount count in CDC — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md) + [Inventory](./Module1_Copilot_Tools_Inventory.md)
-5. **Deploy `ai/staff-ops`** — unblocks `get_staff_ops_health`
+2. **Platform help & task how-tos** — [Platform help plan](./Module1_Copilot_Platform_Help_Plan.md) — export report, schedule, orders, MEV
+3. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md) — **33 tools** measured (intent + slim batches)
+4. ~~**Slim-split billing/ops/menu**~~ — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
+5. **Fix data honesty** — discount count in CDC — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md) + [Inventory](./Module1_Copilot_Tools_Inventory.md)
+6. **Deploy `ai/staff-ops`** — unblocks `get_staff_ops_health` on prod
 
 ---
 
