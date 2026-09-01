@@ -16,6 +16,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Cut LLM tokens (payloads + tools) | [Module1_Copilot_Slim_Split_Plan.md](./Module1_Copilot_Slim_Split_Plan.md) + [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
 | Run golden tests and record baselines | [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md) |
 | Plan platform help & task how-tos (export report, schedule, orders) | [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md) |
+| Prod launch checklist (smoke, validator, golden) | [Module1_Copilot_Prod_Launch_Plan.md](./Module1_Copilot_Prod_Launch_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
 
 ---
@@ -194,12 +195,13 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 ## Current priorities
 
-1. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
-2. **Platform help & task how-tos** — [Platform help plan](./Module1_Copilot_Platform_Help_Plan.md) — Phase A–C portal UX ✅; `get_daily_highlights` next
-3. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md) — **33 tools** measured (intent + slim batches)
-4. ~~**Slim-split billing/ops/menu**~~ — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
-5. **Fix data honesty** — discount count in CDC — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md) + [Inventory](./Module1_Copilot_Tools_Inventory.md)
-6. **Deploy `ai/staff-ops`** — unblocks `get_staff_ops_health` on prod
+1. **Prod launch** — [Prod launch plan](./Module1_Copilot_Prod_Launch_Plan.md) — Phase 1 in progress
+2. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
+3. ~~**Platform help & task how-tos**~~ — Phase A–C ✅ including For You insights
+4. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md)
+5. ~~**Slim-split billing/ops/menu**~~ — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
+6. **Fix data honesty** — discount verify on prod — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md)
+7. **Deploy `ai/staff-ops`** — confirm on prod analytics-edge-api
 
 ---
 
@@ -209,7 +211,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 |----------|---------|---------|
 | `AI_TOOL_FILTER` | `hints` today → **`intent` (shipped)** | Tool registry mode |
 | `AI_TOOL_FILTER_MAX` | `15` | Cap tools per ask in intent mode |
-| `AI_MAX_STEPS` | `5` | Max LLM tool loop steps |
+| `AI_ANSWER_VALIDATOR_STRICT` | `false` | Append disclaimer when numeric validation fails |
 | `AI_MODEL` | `gemini-3.5-flash-lite` | Primary model |
 
 See `ai-edge-api/README.md` for full list.

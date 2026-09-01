@@ -160,7 +160,7 @@ Legacy                   get_feature_howto(featureId)
 | How do I check orders? | search → task | ✅ `caa879d3` |
 | How do I export fiscal data? | search → task | ✅ `d06b3b24` |
 | How do I schedule shifts? | task or feature howto | ✅ `a93ede30` (legacy feature) |
-| How do I post to social? | task `automation.create_post` | ⬜ run |
+| How do I post to social? | task `automation.create_post` | ✅ in `golden:platform` |
 
 See [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md).
 

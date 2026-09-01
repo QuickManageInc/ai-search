@@ -175,7 +175,7 @@ Claude Code uses native `defer_loading`; we mirror it portably via intent today 
 - [x] **Reservations in operations** — `get_reservations_summary` moved from revenue → operations category
 - [x] **Slim platform catalog** — `listPlatformCapabilitiesSlim()` (~70% smaller tool result)
 - [x] **Tool catalog scaffold** — `src/tools/toolCatalog.ts` for phase-2 ToolSearch
-- [ ] Metric: `routing.phantom` when model calls tool not in `activeToolNames`
+- [x] Metric: `routing.phantom` when model calls tool not in `activeToolNames`
 
 ### Tests / golden questions
 
