@@ -28,7 +28,7 @@ Hand deploy team: [Env vars](#env-vars-prod-checklist) + Phase 1.5 ops checklist
 |----------|----------|
 | Timeline | **Prod merchants soon** |
 | Token optimization (Phase E) | **After all features** — ~8k/how-to acceptable for v1 |
-| For You cards | **3-card REST feed is enough for v1** — add compliance/reservations sources in v1.1 |
+| For You cards | **Deferred** — removed from Home for now (was 3× analytics fan-out per refresh). Endpoint kept. |
 | Rollout | TBD — pilot stores vs all (`VITE_ENABLE_AI_ASSISTANT`) |
 
 ---
@@ -38,7 +38,7 @@ Hand deploy team: [Env vars](#env-vars-prod-checklist) + Phase 1.5 ops checklist
 Copilot is **prod-ready** when:
 
 1. Merchant can ask **analytics + how-to** from the global FAB and get **accurate or honest** answers.
-2. Home dashboard shows **For You** cards when AI is enabled (`GET /api/v1/ai/copilot/insights`).
+2. ~~Home dashboard shows **For You** cards~~ — **deferred** (unmounted; `GET /insights` kept).
 3. **12-ask smoke** on prod passes with no P0 wrong-number failures.
 4. Failures degrade gracefully (auth, analytics down, empty data).
 

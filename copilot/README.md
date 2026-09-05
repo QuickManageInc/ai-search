@@ -18,6 +18,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Plan platform help & task how-tos (export report, schedule, orders) | [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md) |
 | Prod launch checklist (smoke, validator, golden) | [Module1_Copilot_Prod_Launch_Plan.md](./Module1_Copilot_Prod_Launch_Plan.md) |
 | Deploy to dev (GitOps + AWS secrets for supervisor) | [Module1_Copilot_Deploy_Handoff.md](./Module1_Copilot_Deploy_Handoff.md) |
+| AppBar drawer UX + inline charts plan | [Module1_Copilot_UX_Charts_Plan.md](./Module1_Copilot_UX_Charts_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
 
 ---
