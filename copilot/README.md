@@ -15,6 +15,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Map domains → analytics routes → tools | [Module1_Copilot_Domain_Metrics_Map.md](./Module1_Copilot_Domain_Metrics_Map.md) |
 | Cut LLM tokens (payloads + tools) | [Module1_Copilot_Slim_Split_Plan.md](./Module1_Copilot_Slim_Split_Plan.md) + [Module1_Copilot_Intent_Tool_Filter_Plan.md](./Module1_Copilot_Intent_Tool_Filter_Plan.md) |
 | Run golden tests and record baselines | [Module1_Copilot_Tool_Test_Questions.md](./Module1_Copilot_Tool_Test_Questions.md) |
+| Eval matrix + tool gaps (industry-style asks) | [Module1_Copilot_Eval_Matrix.md](./Module1_Copilot_Eval_Matrix.md) |
 | Plan platform help & task how-tos (export report, schedule, orders) | [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md) |
 | Prod launch checklist (smoke, validator, golden) | [Module1_Copilot_Prod_Launch_Plan.md](./Module1_Copilot_Prod_Launch_Plan.md) |
 | Deploy to dev (GitOps + AWS secrets for supervisor) | [Module1_Copilot_Deploy_Handoff.md](./Module1_Copilot_Deploy_Handoff.md) |
@@ -133,6 +134,19 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - Blocker: `ai/staff-ops` 404 on dev
 
 **Status:** Living doc — update after intent mode ships and remaining golden questions run.
+
+---
+
+### [Module1_Copilot_Eval_Matrix.md](./Module1_Copilot_Eval_Matrix.md)
+
+**What it is:** Industry-style **eval question matrix** (~30 singles + multi-turn + guardrails) plus a **gap-only tool list**.  
+**Topics covered:**
+
+- Microsoft / Salesforce / Intercom / τ-bench categories mapped onto CORE vs EXISTS vs NONE
+- Phase-2 run order (IDs 13–30) after launch smoke 12/12
+- Tools that exist but are unreachable in intent CORE; tools that should not be built yet
+
+**Status:** Spec + runner — `bun run eval:matrix` in `ai-edge-api` (`scripts/run-eval-matrix.ts`).
 
 ---
 
