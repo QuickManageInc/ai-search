@@ -18,6 +18,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Eval matrix + tool gaps (industry-style asks) | [Module1_Copilot_Eval_Matrix.md](./Module1_Copilot_Eval_Matrix.md) |
 | Plan platform help & task how-tos (export report, schedule, orders) | [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md) |
 | Prod launch checklist (smoke, validator, golden) | [Module1_Copilot_Prod_Launch_Plan.md](./Module1_Copilot_Prod_Launch_Plan.md) |
+| Harden agent before HITL actions (pins, eval:fetch, action contract) | [Module1_Copilot_Pre_Action_Readiness.md](./Module1_Copilot_Pre_Action_Readiness.md) |
+| Read-agent hardening (pins, how-to Redis, eval:fetch, grounding badge) | [Module1_Copilot_Read_Agent_Hardening_Plan.md](./Module1_Copilot_Read_Agent_Hardening_Plan.md) |
 | Deploy to dev (GitOps + AWS secrets for supervisor) | [Module1_Copilot_Deploy_Handoff.md](./Module1_Copilot_Deploy_Handoff.md) |
 | AppBar drawer UX + inline charts plan | [Module1_Copilot_UX_Charts_Plan.md](./Module1_Copilot_UX_Charts_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
@@ -150,6 +152,36 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 ---
 
+### [Module1_Copilot_Pre_Action_Readiness.md](./Module1_Copilot_Pre_Action_Readiness.md)
+
+**What it is:** Gate checklist before **HITL write actions** — what to discuss, test, and ship on the read-only agent first.  
+**Topics covered:**
+
+- Current status (CORE 12/12, EXISTS pins dropped, fetch/ground not in scripts)
+- Four-layer eval (route / fetch / loop / ground) and `ai_usage_log` era filter
+- Must / should / defer lists for final read-only setup
+- Next threads: **(A)** pin-honor, **(B)** `eval:fetch` assertions, **(C)** first HITL action shape
+
+**Status:** Agenda — implementation locked in the read-agent hardening plan.  
+**Code touchpoints:** `toolFocusMap.ts`, `questionIntent.ts`, `run-eval-matrix.ts`, `validateAnswerAgainstToolFacts.ts`
+
+---
+
+### [Module1_Copilot_Read_Agent_Hardening_Plan.md](./Module1_Copilot_Read_Agent_Hardening_Plan.md)
+
+**What it is:** Locked **read-only** implementation plan (2026-09-13): honor pins, how-to-only Redis cache, eval fetch/ground, compare DTO + grounding badge.  
+**Topics covered:**
+
+- CORE-first pin-union (do not A–Z sort the union); A-list + R4 mix patterns
+- Redis: cache how-to/capabilities only; key = question + locale + **storeFeatures**, not `storeId`
+- `--strict` is not “done”; fetch/ground + multi-turn required
+- SSE late badge; do not buffer; writes out of scope
+
+**Status:** Ready to implement.  
+**Code touchpoints:** `toolFocusMap.ts`, `responseCache.ts`, `run-eval-matrix.ts`, `validateAnswerAgainstToolFacts.ts`, portal Copilot meta
+
+---
+
 ### [Module1_Copilot_Platform_Help_Plan.md](./Module1_Copilot_Platform_Help_Plan.md)
 
 **What it is:** Plan for **Family 2 — platform / management help**: deep how-to for static product workflows (export report PDF, schedule shifts, check orders, MEV, automation).  
@@ -211,13 +243,15 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 ## Current priorities
 
-1. **Prod launch** — [Prod launch plan](./Module1_Copilot_Prod_Launch_Plan.md) — Phase 1 in progress
-2. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
-3. ~~**Platform help & task how-tos**~~ — Phase A–C ✅ including For You insights
-4. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md)
-5. ~~**Slim-split billing/ops/menu**~~ — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
-6. **Fix data honesty** — discount verify on prod — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md)
-7. **Deploy `ai/staff-ops`** — confirm on prod analytics-edge-api
+1. **Read-agent hardening** — [Read-agent hardening plan](./Module1_Copilot_Read_Agent_Hardening_Plan.md) — pins, how-to Redis, eval:fetch, grounding badge
+2. **Pre-action readiness** — [Pre-action readiness](./Module1_Copilot_Pre_Action_Readiness.md) — HITL still deferred
+3. **Prod launch** — [Prod launch plan](./Module1_Copilot_Prod_Launch_Plan.md) — Phase 1 in progress
+4. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅
+5. ~~**Platform help & task how-tos**~~ — Phase A–C ✅ including For You insights
+6. **Finish golden questions** — [Test questions](./Module1_Copilot_Tool_Test_Questions.md)
+7. ~~**Slim-split billing/ops/menu**~~ — [Slim plan](./Module1_Copilot_Slim_Split_Plan.md) ✅
+8. **Fix data honesty** — discount verify on prod — [Domain map](./Module1_Copilot_Domain_Metrics_Map.md)
+9. **Deploy `ai/staff-ops`** — confirm on prod analytics-edge-api
 
 ---
 
