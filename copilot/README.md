@@ -20,6 +20,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Prod launch checklist (smoke, validator, golden) | [Module1_Copilot_Prod_Launch_Plan.md](./Module1_Copilot_Prod_Launch_Plan.md) |
 | Harden agent before HITL actions (pins, eval:fetch, action contract) | [Module1_Copilot_Pre_Action_Readiness.md](./Module1_Copilot_Pre_Action_Readiness.md) |
 | Read-agent hardening (pins, how-to Redis, eval:fetch, grounding badge) | [Module1_Copilot_Read_Agent_Hardening_Plan.md](./Module1_Copilot_Read_Agent_Hardening_Plan.md) |
+| Remaining read-agent steps (multi-turn first, then measure, then eval hygiene) | [Module1_Copilot_Read_Agent_Next_Steps.md](./Module1_Copilot_Read_Agent_Next_Steps.md) |
+| Cache / numeral measure snapshot (keep CORE-first; do not widen Ground) | [Module1_Copilot_Measure_Snapshot.md](./Module1_Copilot_Measure_Snapshot.md) |
 | Deploy to dev (GitOps + AWS secrets for supervisor) | [Module1_Copilot_Deploy_Handoff.md](./Module1_Copilot_Deploy_Handoff.md) |
 | AppBar drawer UX + inline charts plan | [Module1_Copilot_UX_Charts_Plan.md](./Module1_Copilot_UX_Charts_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
@@ -148,7 +150,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - Phase-2 run order (IDs 13–30) after launch smoke 12/12
 - Tools that exist but are unreachable in intent CORE; tools that should not be built yet
 
-**Status:** Spec + runner — `bun run eval:matrix` in `ai-edge-api` (`scripts/run-eval-matrix.ts`).
+**Status:** Spec + runner — `bun run eval:matrix` in `ai-edge-api` (`tests/run-eval-matrix.ts`; fetch/ground on, `--route-only` to disable).
 
 ---
 
@@ -157,7 +159,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 **What it is:** Gate checklist before **HITL write actions** — what to discuss, test, and ship on the read-only agent first.  
 **Topics covered:**
 
-- Current status (CORE 12/12, EXISTS pins dropped, fetch/ground not in scripts)
+- Current status (CORE 12/12, pins honored, fetch/ground in `eval:matrix`)
 - Four-layer eval (route / fetch / loop / ground) and `ai_usage_log` era filter
 - Must / should / defer lists for final read-only setup
 - Next threads: **(A)** pin-honor, **(B)** `eval:fetch` assertions, **(C)** first HITL action shape
@@ -177,8 +179,32 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - `--strict` is not “done”; fetch/ground + multi-turn required
 - SSE late badge; do not buffer; writes out of scope
 
-**Status:** Ready to implement.  
+**Status:** Steps 1–4 landed (pin-honor, how-to Redis, eval fetch/ground, compare `deltaAmount` + portal badge). Closeout: [Next steps](./Module1_Copilot_Read_Agent_Next_Steps.md) steps 1–3 done; HITL still open.  
 **Code touchpoints:** `toolFocusMap.ts`, `responseCache.ts`, `run-eval-matrix.ts`, `validateAnswerAgainstToolFacts.ts`, portal Copilot meta
+
+---
+
+### [Module1_Copilot_Read_Agent_Next_Steps.md](./Module1_Copilot_Read_Agent_Next_Steps.md)
+
+**What it is:** Closeout after hardening 1–4 — **what to do next, in order**, and why.  
+**Topics covered:**
+
+- Why 18/18 first-turn is not “read agent done”
+- **First:** multi-turn M1 / M5 / M6 (`sessionId`, must re-tool)
+- **Then:** measure Gemini `cachedInputTokens` + numeral coverage (no product change until data)
+- **Also:** eval hygiene (EXISTS fail copy, T3 NL vs golden dates)
+- What not to add (HITL, extra tools, wider Ground)
+
+**Status:** Steps 1–3 done. [Measure snapshot](./Module1_Copilot_Measure_Snapshot.md): keep CORE-first, do not widen Ground. HITL still deferred.  
+**Code touchpoints:** `tests/run-eval-multiturn.ts`, `tests/measure-usage-log.ts`, `tests/run-eval-matrix.ts`, `SessionManager.ts`, `ai_usage_log`
+
+---
+
+### [Module1_Copilot_Measure_Snapshot.md](./Module1_Copilot_Measure_Snapshot.md)
+
+**What it is:** Step 2 log snapshot — Gemini `cachedInputTokens` CORE-12 vs pinned, and `$`/`%` numeral coverage.  
+**Decisions:** Keep CORE-first mixed schemas (no two-call pin stage). Do not widen Ground to counts/dates.  
+**Code touchpoints:** `tests/measure-usage-log.ts`, `ai_usage_log`
 
 ---
 
@@ -243,7 +269,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 ## Current priorities
 
-1. **Read-agent hardening** — [Read-agent hardening plan](./Module1_Copilot_Read_Agent_Hardening_Plan.md) — pins, how-to Redis, eval:fetch, grounding badge
+1. **Read-agent closeout** — [Next steps](./Module1_Copilot_Read_Agent_Next_Steps.md) — steps 1–3 done; HITL still deferred
+2. **Read-agent hardening** — [Read-agent hardening plan](./Module1_Copilot_Read_Agent_Hardening_Plan.md) — steps 1–4 landed
 2. **Pre-action readiness** — [Pre-action readiness](./Module1_Copilot_Pre_Action_Readiness.md) — HITL still deferred
 3. **Prod launch** — [Prod launch plan](./Module1_Copilot_Prod_Launch_Plan.md) — Phase 1 in progress
 4. ~~**Implement intent tool filter**~~ — [Intent plan](./Module1_Copilot_Intent_Tool_Filter_Plan.md) ✅

@@ -709,7 +709,7 @@ The safety property was “the LLM never computes.” The validator only covers 
 | `"3 of your top 5 items"`, `"up from 40 covers"` | Counts have no `$` / `%`. `*count` keys are stripped from the allowed pool anyway. |
 | `"revenue dropped 20% because of the rain"` | `20%` may match the DTO; **because of rain** is unconstrained. Causal connectors are not parsed. |
 | `"tips went down since you changed staff"` | Zero numeric mentions → `ok: true`. |
-| `$12,400` vs last week when the DTO has current only | Compare/delta the model invented. Classic `get_period_comparison` / “vs last week” fail — or worse, a rounded delta that almost matches something else in the pool. |
+| `$12,400` vs last week when the DTO has current only | Compare/delta the model invented. **Mitigated** on `*Usd` compare metrics via `deltaAmount`; still a miss if the model subtracts two numbers that were never derived. |
 | Model writes `12,400` without `$` | Regex never sees it. |
 | How-to path | Skipped entirely (`platform_only`). |
 | Soft-fail `{ error }` then a number from **history** | `no_tool_data` skip, or no usable analytics DTO this turn. |

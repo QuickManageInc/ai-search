@@ -13,7 +13,7 @@ Index: [README.md](./README.md) · Golden history: [Module1_Copilot_Tool_Test_Qu
 | Launch smoke `bun run smoke:launch` | **12/12 passed** |
 | CORE (`AI_TOOL_FILTER=intent`) | **12 tools** — composites + essentials; pins outside CORE are logged but **not registered** |
 | This matrix | ~30 capability cases + 6 multi-turn + 5 guardrails |
-| Phase-2 script | `cd ai-edge-api && bun run eval:matrix` (`scripts/run-eval-matrix.ts`, IDs 13–30) |
+| Phase-2 script | `cd ai-edge-api && bun run eval:matrix` (`tests/run-eval-matrix.ts`, IDs 13–30; fetch/ground on) |
 
 **CORE today**
 
@@ -91,7 +91,7 @@ Launch smoke: S1-adjacent via other IDs; S2–S4 covered.
 |---|---|---|---|---|
 | T1 | How did we do vs last week? | `get_period_comparison` | CORE | WoW windows; one compare call |
 | T2 | Show day-by-day revenue vs the prior week | `get_revenue_by_day` (`compare=previous` or wow) | CORE | Dual series, not totals-only compare |
-| T3 | Month over month revenue | `get_period_comparison` (mom) | CORE | MoM windows |
+| T3 | Period-over-period revenue | `get_period_comparison` | CORE | Eval asks “this period vs the prior period” so NL does not steal the golden Feb window. N2 still tests last-week NL. |
 | T4 | What were the best and worst days? | `get_best_worst_days` **or** `get_revenue_summary` | EXISTS / CORE | Named dates + revenue; summary is acceptable alias |
 | T5 | Revenue for last 7 days | NL + `get_revenue_summary` or `get_revenue_by_day` | CORE | `dateRangeSource=nl`; by_day preferred for “each day” |
 
@@ -181,7 +181,7 @@ Keep launch 12, then add these **new** singles (multi-turn + guardrails after):
 |---:|---|---|
 | 13 | S1 | How were overall sales this period? |
 | 14 | T2 | Show day-by-day revenue vs the prior week |
-| 15 | T3 | How did this month compare to last month? |
+| 15 | T3 | How did this period compare to the prior period? |
 | 16 | D1 | Why were sales down this period? |
 | 17 | S5 | How much is collected vs outstanding? |
 | 18 | S6 | What's our order completion rate? |
@@ -269,10 +269,14 @@ Refuse + how-to is the correct product for those asks.
 | Command | What |
 |---|---|
 | `bun run smoke:launch` | 12/12 CORE regression gate |
-| `bun run eval:matrix` | Phase-2 IDs 13–30 (`scripts/run-eval-matrix.ts`) |
+| `bun run eval:matrix` | Phase-2 IDs 13–30 (`tests/run-eval-matrix.ts`) — route **plus** fetch/ground |
 | `bun run eval:matrix -- --core` | Skip EXISTS gap rows |
-| `bun run eval:matrix -- --strict` | Fail the run if EXISTS tools are still unreachable |
+| `bun run eval:matrix -- --strict` | Fail the run if EXISTS route/fetch/ground miss |
+| `bun run eval:matrix -- --route-only` | Tool/policy names only (no fetch/ground) |
+| `bun run eval:multiturn` | Sessioned M1 / M5 / M6 (`tests/run-eval-multiturn.ts`; also `eval:matrix -- --multiturn`) |
+| `bun run measure:usage` | Step 2: CORE-12 vs pinned `cachedInputTokens` + `$`/`%` coverage |
+| `bun run test:eval-layers` | Unit judges for `toolFailed` / compare overlay / grounding / re-tool |
 
-Default `eval:matrix` exit code fails only on CORE / HOWTO / POLICY. EXISTS misses print as `~` (expected until pins are honored).
+Default `eval:matrix` exit code fails on CORE / HOWTO / POLICY **including** fetch/ground. EXISTS misses print as `~` unless `--strict`. Redis how-to hits print `↷ cache-skip` (not a pass on empty `toolsCalled`). Fail reasons print under `✗` (`fetch: toolFailed`, `ground: unmatched`, …). EXISTS summary names **pin/route miss** vs **fetch/ground fail** (not “still gated by CORE”). T3 asks “this period vs the prior period” so NL does not steal the golden Feb window.
 
-**Still later:** sessioned M1–M6 (needs `sessionId`).
+`--multiturn` does **not** also run the 18 first-turn cases. M5 (`get_fulfillment` on turn 2) is a hard fail (no `~`). Follow-up with empty `toolsCalled` → `route: follow-up did not re-tool`.

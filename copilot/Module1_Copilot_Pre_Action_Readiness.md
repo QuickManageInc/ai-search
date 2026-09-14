@@ -23,8 +23,8 @@ Do **not** start the action section until the exit criteria below are met (or ex
 | Platform help (`search_platform_help` → `get_task_howto`) | Done |
 | Numeric answer validator | Shipped (log-only; compare asks often unmatched) |
 | Eval matrix Phase-2 | **12/18** gate; EXISTS **0/6** by design until pins honored |
-| Fetch / step / grounding assertions in scripts | **Not shipped** |
-| Multi-turn M1–M6 | **Unscripted** |
+| Fetch / step / grounding assertions in scripts | **Shipped** — `bun run eval:matrix` ( `--route-only` to disable ) |
+| Multi-turn M1–M6 | **Green** M1 / M5 / M6 (`bun run eval:multiturn`, 2026-09-14) |
 | Write / HITL actions | Explicitly deferred — correct |
 
 **Evidence:** `aiDB.ai_usage_log` (~257 docs). Filter diagnoses to current era:
@@ -161,18 +161,9 @@ Read-only work (pins, Redis how-to cache, eval:fetch, grounding badge) is specif
 
 ### (B) Exact `eval:fetch` assertions
 
-**Problem:** Tool-name pass hides soft fetch failures and invented numbers. Sep-7 outage looked “successful” on routing.
+**Status (2026-09-14):** Shipped in `eval:matrix` (always-on fetch/ground; `--route-only` to disable). Unit: `bun run test:eval-layers`. SSE meta carries `toolFailed`, `compareError` / `compareOverlay`, `stepCount`, `grounding`. Redis how-to hit = skip. Do **not** use a raw ~97-char size band (`get_fulfillment` can be ~80). Compare overlay is asserted on **T2** only.
 
-**Design sketch:**
-
-- New script or flags on `run-eval-matrix.ts` (e.g. `--fetch`, `--ground`).
-- Per case: optional `maxFetchMs`, `minResultChars` / `maxResultChars`, `expectSteps`, `requireValidationOk`.
-- Fail if answer matches soft-error copy or `toolFailed`.
-- Skip when SSE/meta indicates Redis cache hit (`inputTokens === 0` / `cached`).
-- Join `requestId` → `ai_usage_log` for `llmSteps` / `toolResults` when meta is thin.
-
-**Code:** `ai-edge-api/scripts/run-eval-matrix.ts`, optionally SSE `meta` enrichment in `copilot.service.ts`  
-**Verify:** Deliberate analytics-down run fails fetch layer; healthy run stays green.
+**Verify:** Deliberate analytics-down run fails `fetch: toolFailed`; invented `$`/`%` fails `ground: unmatched`. T3/N2 compare-DTO grounding may stay red until step 4 slim `this`/`prev`/`delta`.
 
 ---
 

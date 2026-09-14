@@ -2,7 +2,7 @@
 
 > **Goal:** Make the **read-only** agent trustworthy (route → fetch → narrate → ground) without starting HITL writes.  
 > **Status:** Locked from 2026-09-13 decisions. Implementation next.  
-> **Related:** [Pre-action readiness](./Module1_Copilot_Pre_Action_Readiness.md) · [Eval matrix](./Module1_Copilot_Eval_Matrix.md) · [Intent filter](./Module1_Copilot_Intent_Tool_Filter_Plan.md) · [Code map](../architecture/Code_map.md)
+> **Related:** [Pre-action readiness](./Module1_Copilot_Pre_Action_Readiness.md) · [Eval matrix](./Module1_Copilot_Eval_Matrix.md) · [Intent filter](./Module1_Copilot_Intent_Tool_Filter_Plan.md) · [Code map](../architecture/Code_map.md) · **[Next steps (closeout)](./Module1_Copilot_Read_Agent_Next_Steps.md)**
 
 Writes (preview / confirm / mutate) stay out of this plan.
 
@@ -32,17 +32,19 @@ Do **not**:
 
 | Step | What | Done when |
 |------|------|-----------|
-| **1** | Allowlisted pin-union, CORE-first schema order, `pin_dropped` metric, R4 mix patterns | EXISTS tools callable; CORE-only asks still 12 schemas in CORE-first order |
-| **2** | Redis: how-to / capabilities only | Analytics asks never `ai:cache` hit; how-to can |
-| **3** | Eval layers 2–4 on the same cases; Redis hit ≠ pass | `toolFailed` / bad compare / grounding fail = red; cache hit = skip |
-| **4** | Compare slim `this` / `prev` / `delta`; validator always-on + `not_applicable` | Compare grounding usable; how-to is N/A not fake-ok |
-| **5** | Measure numeral coverage + `cachedInputTokens` CORE-only vs pinned | Data to keep mixed schemas or not |
+| **1** | Allowlisted pin-union, CORE-first schema order, `pin_dropped` metric, R4 mix patterns | EXISTS tools callable; CORE-only asks still 12 schemas in CORE-first order — **code landed** (`bun run test:pin-honor`); confirm with `eval:matrix -- --strict` |
+| **2** | Redis: how-to / capabilities only | Analytics asks never `ai:cache` hit; how-to can — **code landed** (`bun run test:howto-cache`) |
+| **3** | Eval layers 2–4 on the same cases; Redis hit ≠ pass | `toolFailed` / bad compare / grounding fail = red; cache hit = skip — **code landed** (`bun run test:eval-layers`; live `eval:matrix` fetch/ground on, `--route-only` to disable) |
+| **4** | Compare slim `this` / `prev` / `delta`; validator always-on + `not_applicable` | Compare grounding usable; how-to is N/A not fake-ok — **code landed** (`bun run test:validator`; portal badge on `grounding.status === failed`) |
+| **5** | Measure numeral coverage + `cachedInputTokens` CORE-only vs pinned | Data to keep mixed schemas or not — **landed** ([snapshot](./Module1_Copilot_Measure_Snapshot.md): keep CORE-first; widen Ground **no**) |
 
 Steps 1 and 3 can overlap (pins + eval:fetch in the same PR series). Step 2 is a small cache change; do it with 1 or immediately after so eval is honest.
 
 ---
 
 ## Step 1 — Honor pins (thread A)
+
+**Status (2026-09-13):** Implemented in `ai-edge-api`. Unit: `bun run test:pin-honor`. Live: `bun run eval:matrix -- --strict`.
 
 ### Problem
 
@@ -101,6 +103,8 @@ Add patterns (examples): `\bdine-?in\b`, `\btakeout\b`, `\btake-?away\b`, `\bdel
 
 ## Step 2 — Redis how-to-only cache
 
+**Status (2026-09-13):** Implemented in `ai-edge-api`. Unit: `bun run test:howto-cache`. Analytics asks skip Redis; how-to keys are `ai:howto:{hash}` (question + locale + feature fingerprint, not storeId). Eval HOWTO/POLICY Redis hits print `↷ cache-skip`.
+
 ### Problem
 
 Exact-match Redis cache stores **plain answer text**, first turn, keyed by `storeId + question + dates + tool names`. Analytics answers can be wrong-but-cached (soft-fail, half-compare). Eval sees `0` tok and `toolsCalled: []`. Cache hits skip Gemini and skip grounding.
@@ -156,6 +160,8 @@ Redis how-to hit → **skip** the case (or pass-if-text-matches), never treat `t
 
 ## Step 3 — Eval layers 2–4 (thread B, read-only)
 
+**Status (2026-09-14):** Implemented in `ai-edge-api`. Unit: `bun run test:eval-layers`. Live: `bun run eval:matrix` (fetch/ground always-on). `--route-only` disables layers 2–4. Redis how-to hit = `↷ cache-skip`. EXISTS fetch/ground only fails the exit code with `--strict`.
+
 `--strict` = A-list pins **callable**. That is necessary and **not sufficient**.
 
 | Gate | Meaning |
@@ -182,20 +188,27 @@ Multi-turn (after pin + fetch gates): at least compare follow-up, collected-afte
 
 ### Code
 
-- `ai-edge-api/scripts/run-eval-matrix.ts` (`--fetch` / `--ground` or always-on for those checks)
-- Optional SSE `meta` enrichment (`toolFailed`, `grounding`)
+- `ai-edge-api/tests/evalLayers.ts` + `tests/run-eval-matrix.ts` (`--route-only` to disable fetch/ground)
+- SSE `meta`: `toolFailed`, `compareError`, `compareOverlay`, `stepCount`, `grounding`, slim `toolResults`
 
-Portal: consume `meta.grounding` for the late badge (step 4). Eval can use the same field.
+Portal: consume `meta.grounding` for the late badge (step 4). Eval uses the same field.
 
 ---
 
 ## Step 4 — Compare DTO + validator + SSE badge
 
+**Status (2026-09-14):** Implemented. Locked: **add `deltaAmount`, do not rename `current`/`compare`**; zero `$`/`%` mentions stay **passed**; portal badge **only** when `grounding.status === failed`.
+
 ### Compare slim
 
-Push **`this` / `prev` / `deltaAmount` / `deltaPct`** (names as they fit existing `ai/compare-periods` / `get_revenue_by_day` compare series) so the model copies numbers Ground can allowlist. Do not let the validator invent arbitrary arithmetic — only these derived fields.
+Keep existing `current` / `compare` / `changePct`. Add **`deltaAmount`** (`current − compare`) on USD compare metrics so the model copies dollar deltas Ground can allowlist. Do not let the validator invent arithmetic.
 
-If the prior window fetch fails: set `compareError`, **do not Redis-cache**, narrate “this period only; comparison unavailable.”
+| Surface | Field |
+|---------|--------|
+| `get_period_comparison` (`ai/compare-periods`) | `metrics.revenueUsd.deltaAmount`, `metrics.aovUsd.deltaAmount`, `byChannel[].deltaAmount`. **Not** on `orders` (count ≠ money). |
+| `get_revenue_by_day` overlay | `compareTotals.revenueUsd.{current,compare,changePct,deltaAmount}` (period-level). No per-day point deltas. |
+
+If the prior window fetch fails: set `compareError`, **do not Redis-cache**, narrate “this period only; comparison unavailable.” Overlay already does this; whole-tool fail on period comparison is still `toolFailed`.
 
 ### Validator
 
@@ -205,7 +218,7 @@ Always run. Distinctions:
 |--------|---------|
 | `passed` | Analytics tools + usable DTO; `$`/`%` in answer ⊆ facts |
 | `failed` | Unmatched `$`/`%` |
-| `not_applicable` | Platform-only how-to / capabilities (or no numeric mentions to check — product call: still N/A vs passed; **do not** omit the field) |
+| `not_applicable` | Platform-only how-to / capabilities. Usage log always persists `status` + `skipReason`. Zero `$`/`%` mentions on analytics stay **passed**, not N/A. |
 
 Stop treating `skipped: true` as silent success in logs. Keep usage `answerValidation.status` (or `skipped` + `skipReason` **always persisted**).
 
@@ -240,12 +253,16 @@ Portal: if `failed`, badge the bubble (“figures may not match Reports”). Mer
 
 ## Step 5 — Measure (no extra product change until data)
 
+**Status (2026-09-14):** Snapshot recorded. Keep CORE-first mixed schemas. Do not widen Ground. Re-run `bun run measure:usage`.
+
 On CORE-12 intent, `cached: false`, `!toolFailed`:
 
 - Fraction of answer numerals that current `$`/`%` regex covers vs all digits (usage log sample).
 - `cachedInputTokens` / `cacheHitRatio` for `registeredToolCount === 12` vs `> 12`.
 
 Then decide: keep CORE-first mixed schemas, or revisit two-call / ToolSearch. Not a ship gate for steps 1–4.
+
+**Decision:** CORE-12 cache **0/96** in this corpus (pinned **0/51**). Historical CORE-10 *did* cache (~1700 tok). Two-call pin stage would add TTFT with no prefix to reuse. `$`/`%` covers **45.7%** of answer digits; leftovers are years/days/counts — widen Ground **no**. Details: [Measure snapshot](./Module1_Copilot_Measure_Snapshot.md).
 
 ---
 
@@ -266,10 +283,10 @@ Then decide: keep CORE-first mixed schemas, or revisit two-call / ToolSearch. No
 - [ ] `smoke:launch` 12/12 on a healthy stack
 - [ ] `eval:matrix` CORE/HOWTO/POLICY green
 - [ ] `--strict` EXISTS reachable (pins + R4)
-- [ ] Fetch/ground assertions fail on edge-down and invented `$`/`%`
+- [x] Fetch/ground assertions fail on edge-down and invented `$`/`%`
 - [ ] Analytics Redis answer cache off; how-to cache feature-fingerprinted, not per-`storeId`
 - [ ] ≥3 multi-turn cases re-tool
-- [ ] Portal badge on `grounding.status === failed`
+- [x] Portal badge on `grounding.status === failed`
 - [ ] Phantom ≈ 0; `pin_dropped` only for non-allowlist pins
 
 ---
@@ -279,7 +296,8 @@ Then decide: keep CORE-first mixed schemas, or revisit two-call / ToolSearch. No
 | Command | Role |
 |---------|------|
 | `bun run smoke:launch` | 12/12 CORE |
-| `bun run eval:matrix` | Daily CORE/HOWTO/POLICY |
-| `bun run eval:matrix -- --strict` | Pins callable |
-| `bun run eval:matrix -- --fetch` (name TBD) | Fetch + ground; cache skip |
-| `bun run test:validator` | Unit grounding |
+| `bun run eval:matrix` | Daily CORE/HOWTO/POLICY **plus** fetch/ground (`toolFailed` / compare overlay / grounding). Cache skip ≠ pass |
+| `bun run eval:matrix -- --strict` | Pins callable; EXISTS fetch/ground fail the exit code |
+| `bun run eval:matrix -- --route-only` | Tool/policy names only |
+| `bun run test:eval-layers` | Unit fetch/ground judges |
+| `bun run test:validator` | Unit grounding regex / allowlist |
