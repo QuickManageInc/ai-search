@@ -1,7 +1,7 @@
 # Copilot — remaining read-agent steps
 
 > **Goal:** Close the read-only agent (route → fetch → narrate → ground) **before HITL writes**.  
-> **Status:** Steps 1–3 done (2026-09-14). HITL still not started.  
+> **Status:** Steps 1–3 done (2026-09-14). HITL **design** landed (2026-09-16) — [action contract](./Module1_Copilot_HITL_Action_Contract.md). No mutate code.  
 > **Related:** [Hardening plan](./Module1_Copilot_Read_Agent_Hardening_Plan.md) · [Eval matrix](./Module1_Copilot_Eval_Matrix.md) · [Pre-action readiness](./Module1_Copilot_Pre_Action_Readiness.md) · [Measure snapshot](./Module1_Copilot_Measure_Snapshot.md)
 
 Do **not** start preview / confirm / mutate until this file’s “read agent done” bar is met (or explicitly waived).
@@ -201,7 +201,7 @@ Together they finish the read path the hardening plan defined: **route + healthy
 - [x] **M1, M5, M6** green (`sessionId`, re-tool, fetch/ground) — local 2026-09-14, 3/3 chains / 7/7 turns  
 - [x] Cache-hit / numeral snapshot recorded (step 2) — [Measure snapshot](./Module1_Copilot_Measure_Snapshot.md)  
 - [x] Eval EXISTS fail reason is accurate; T3 does not NL-steal the golden range  
-- [ ] HITL still **not** started
+- [x] HITL **design** (not code) — [Action contract](./Module1_Copilot_HITL_Action_Contract.md)
 
 ---
 

@@ -1,7 +1,7 @@
 # Copilot — pre-action readiness
 
 > **Goal:** Harden the **read-only** agent (route → fetch → narrate → ground) before starting any **HITL action** work (preview / confirm / mutate).  
-> **Status:** Agenda locked. **Read-path implementation:** [Read-agent hardening plan](./Module1_Copilot_Read_Agent_Hardening_Plan.md). Thread **C** (HITL) still deferred.  
+> **Status:** Agenda locked. Read path closed. Thread **C** design: [HITL action contract](./Module1_Copilot_HITL_Action_Contract.md) (no mutate code).  
 > **Related:** [Eval matrix](./Module1_Copilot_Eval_Matrix.md) · [Prod launch](./Module1_Copilot_Prod_Launch_Plan.md) · [Intent filter](./Module1_Copilot_Intent_Tool_Filter_Plan.md) · [Deep dive](./Module1_Copilot_Deep_Dive.md)
 
 ---
@@ -25,7 +25,7 @@ Do **not** start the action section until the exit criteria below are met (or ex
 | Eval matrix Phase-2 | **12/18** gate; EXISTS **0/6** by design until pins honored |
 | Fetch / step / grounding assertions in scripts | **Shipped** — `bun run eval:matrix` ( `--route-only` to disable ) |
 | Multi-turn M1–M6 | **Green** M1 / M5 / M6 (`bun run eval:multiturn`, 2026-09-14) |
-| Write / HITL actions | Explicitly deferred — correct |
+| Write / HITL actions | **Design locked** — [action contract](./Module1_Copilot_HITL_Action_Contract.md); mutate code not started |
 
 **Evidence:** `aiDB.ai_usage_log` (~257 docs). Filter diagnoses to current era:
 
@@ -169,22 +169,13 @@ Read-only work (pins, Redis how-to cache, eval:fetch, grounding badge) is specif
 
 ### (C) First HITL action shape (preview / confirm / audit)
 
-**Problem:** Write-from-chat is out of scope until the read agent is trusted — but the **contract** should be locked before the first mutate tool exists.
+**Status (2026-09-16):** Contract written — [HITL action contract](./Module1_Copilot_HITL_Action_Contract.md). **No code.**
 
-**Design sketch:**
+Locks: Confirm is a portal HTTP call (not a tool in `maxSteps`); `plan_id` single-use + TTL + actor/store bind; compare-and-set; idempotency key = `planId`; read-back; blast radius 1; fail closed. v1.5 = deep-link first, optional `social.create_draft`, not Instagram publish.
 
-| Step | Behavior |
-|------|----------|
-| **Preview** | Tool returns proposed change + human-readable summary; **no side effect** |
-| **Confirm** | Merchant explicit yes (UI button or typed confirm); new turn / dedicated endpoint |
-| **Mutate** | Permission-checked call to owning edge API; idempotency key |
-| **Audit** | `ai_usage_log` (+ domain audit) with actor, store, payload, result |
+**Still refuse:** delete orders, change menu prices, inventory 86, email-send, typed “yes” as confirm.
 
-**v1.5 candidates (pick ≤2):** deep-link only **or** one low-risk confirmable write (e.g. open Social Publisher draft / navigate to shift publish).  
-**Still refuse:** delete orders, change menu prices, inventory 86, email-send — until product + permissions say otherwise.
-
-**Code (future):** new action tools separate from analytics `safeExecute`; portal confirm UX; POLICY tests stay red until confirm path exists.  
-**Verify:** POLICY matrix unchanged until preview tool ships; then add confirm/cancel cases.
+**Code (future):** see the contract. POLICY tests stay refuse until a confirm path exists for that action class.
 
 ---
 

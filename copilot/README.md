@@ -22,6 +22,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Read-agent hardening (pins, how-to Redis, eval:fetch, grounding badge) | [Module1_Copilot_Read_Agent_Hardening_Plan.md](./Module1_Copilot_Read_Agent_Hardening_Plan.md) |
 | Remaining read-agent steps (multi-turn first, then measure, then eval hygiene) | [Module1_Copilot_Read_Agent_Next_Steps.md](./Module1_Copilot_Read_Agent_Next_Steps.md) |
 | Cache / numeral measure snapshot (keep CORE-first; do not widen Ground) | [Module1_Copilot_Measure_Snapshot.md](./Module1_Copilot_Measure_Snapshot.md) |
+| HITL write contract (preview / confirm / mutate — design only) | [Module1_Copilot_HITL_Action_Contract.md](./Module1_Copilot_HITL_Action_Contract.md) |
 | Deploy to dev (GitOps + AWS secrets for supervisor) | [Module1_Copilot_Deploy_Handoff.md](./Module1_Copilot_Deploy_Handoff.md) |
 | AppBar drawer UX + inline charts plan | [Module1_Copilot_UX_Charts_Plan.md](./Module1_Copilot_UX_Charts_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
@@ -179,7 +180,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - `--strict` is not “done”; fetch/ground + multi-turn required
 - SSE late badge; do not buffer; writes out of scope
 
-**Status:** Steps 1–4 landed (pin-honor, how-to Redis, eval fetch/ground, compare `deltaAmount` + portal badge). Closeout: [Next steps](./Module1_Copilot_Read_Agent_Next_Steps.md) steps 1–3 done; HITL still open.  
+**Status:** Steps 1–4 landed (pin-honor, how-to Redis, eval fetch/ground, compare `deltaAmount` + portal badge). Closeout: [Next steps](./Module1_Copilot_Read_Agent_Next_Steps.md) steps 1–3 done; HITL [design](./Module1_Copilot_HITL_Action_Contract.md) only.  
 **Code touchpoints:** `toolFocusMap.ts`, `responseCache.ts`, `run-eval-matrix.ts`, `validateAnswerAgainstToolFacts.ts`, portal Copilot meta
 
 ---
@@ -195,7 +196,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 - **Also:** eval hygiene (EXISTS fail copy, T3 NL vs golden dates)
 - What not to add (HITL, extra tools, wider Ground)
 
-**Status:** Steps 1–3 done. [Measure snapshot](./Module1_Copilot_Measure_Snapshot.md): keep CORE-first, do not widen Ground. HITL still deferred.  
+**Status:** Steps 1–3 done. HITL **design** in [Action contract](./Module1_Copilot_HITL_Action_Contract.md); mutate code not started.  
 **Code touchpoints:** `tests/run-eval-multiturn.ts`, `tests/measure-usage-log.ts`, `tests/run-eval-matrix.ts`, `SessionManager.ts`, `ai_usage_log`
 
 ---
@@ -205,6 +206,14 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 **What it is:** Step 2 log snapshot — Gemini `cachedInputTokens` CORE-12 vs pinned, and `$`/`%` numeral coverage.  
 **Decisions:** Keep CORE-first mixed schemas (no two-call pin stage). Do not widen Ground to counts/dates.  
 **Code touchpoints:** `tests/measure-usage-log.ts`, `ai_usage_log`
+
+---
+
+### [Module1_Copilot_HITL_Action_Contract.md](./Module1_Copilot_HITL_Action_Contract.md)
+
+**What it is:** Thread C — preview / confirm / mutate / audit **before** any write tool.  
+**Locks:** Confirm is portal HTTP, not a Gemini tool; `plan_id` single-use; compare-and-set; idempotency; read-back; blast radius 1; fail closed. v1.5 = deep-link, then optional Social Publisher **draft** (not publish).  
+**Status:** Design only. No mutate code.
 
 ---
 
@@ -269,7 +278,8 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 
 ## Current priorities
 
-1. **Read-agent closeout** — [Next steps](./Module1_Copilot_Read_Agent_Next_Steps.md) — steps 1–3 done; HITL still deferred
+1. **HITL (design locked)** — [Action contract](./Module1_Copilot_HITL_Action_Contract.md) — deep-link first; no mutate tools yet
+2. **Read-agent closeout** — [Next steps](./Module1_Copilot_Read_Agent_Next_Steps.md) — steps 1–3 done
 2. **Read-agent hardening** — [Read-agent hardening plan](./Module1_Copilot_Read_Agent_Hardening_Plan.md) — steps 1–4 landed
 2. **Pre-action readiness** — [Pre-action readiness](./Module1_Copilot_Pre_Action_Readiness.md) — HITL still deferred
 3. **Prod launch** — [Prod launch plan](./Module1_Copilot_Prod_Launch_Plan.md) — Phase 1 in progress
