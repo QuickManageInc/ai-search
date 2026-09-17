@@ -23,6 +23,7 @@ Use this file to find **what each doc is for**, **what we decided**, and **what 
 | Remaining read-agent steps (multi-turn first, then measure, then eval hygiene) | [Module1_Copilot_Read_Agent_Next_Steps.md](./Module1_Copilot_Read_Agent_Next_Steps.md) |
 | Cache / numeral measure snapshot (keep CORE-first; do not widen Ground) | [Module1_Copilot_Measure_Snapshot.md](./Module1_Copilot_Measure_Snapshot.md) |
 | HITL write contract (preview / confirm / mutate — design only) | [Module1_Copilot_HITL_Action_Contract.md](./Module1_Copilot_HITL_Action_Contract.md) |
+| Read-agent bilingual / dates / clarify (HITL parked) | [New-stuff/Read_Agent_Bilingual_Dates_Clarify.md](./New-stuff/Read_Agent_Bilingual_Dates_Clarify.md) |
 | Deploy to dev (GitOps + AWS secrets for supervisor) | [Module1_Copilot_Deploy_Handoff.md](./Module1_Copilot_Deploy_Handoff.md) |
 | AppBar drawer UX + inline charts plan | [Module1_Copilot_UX_Charts_Plan.md](./Module1_Copilot_UX_Charts_Plan.md) |
 | Original build spec (historical) | [../Module1_Analytics_Assistant_Plan.md](../Module1_Analytics_Assistant_Plan.md) |
